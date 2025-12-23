@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#FAFAF8]">
+    <main className="min-h-screen">
       <Container size="md" className="py-10">
         <Card
           variant="elevated"

@@ -1,12 +1,27 @@
-import { supabase } from "../lib/supabase/client";
+import { LandingHeader } from "@/components/LandingHeader";
+import { Container } from "@/components/ui/Container";
+import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 
 export default function Home() {
-  console.log("Supabase client loaded:", !!supabase);
-
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Supabase client import test</h1>
-      <p>If this page loads without crashing, we’re good.</p>
+    <main className="min-h-screen bg-[#FAFAF8]">
+      <Container size="md" className="py-10">
+        <Card
+          variant="elevated"
+          className="shadow-md hover:shadow-lg transition-shadow"
+        >
+          <CardHeader className="pb-2">
+            <LandingHeader />
+          </CardHeader>
+
+          <CardContent className="pt-3">
+            <p className="text-sm text-gray-700">
+              Browse available pups, reserve with a deposit, and message us with
+              any questions.
+            </p>
+          </CardContent>
+        </Card>
+      </Container>
     </main>
   );
 }

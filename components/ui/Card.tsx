@@ -10,12 +10,15 @@ export function Card({ variant = "surface", className, ...props }: CardProps) {
     <div
       {...props}
       className={clsx(
-        "rounded-2xl border transition-shadow",
-        // Our “tinted white” base. We’ll refine later if needed.
-        variant === "surface" && "bg-white/80 border-black/5",
+        // Base: make text readable by default and increase border contrast slightly
+        "rounded-2xl border text-gray-900 transition-shadow",
+
+        // Variants
+        variant === "surface" && "bg-white border-black/10",
         variant === "elevated" &&
-          "bg-white/90 border-black/5 shadow-sm hover:shadow-md",
+          "bg-white border-black/10 shadow-sm hover:shadow-md",
         variant === "ghost" && "bg-transparent border-transparent",
+
         className
       )}
     />

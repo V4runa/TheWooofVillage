@@ -100,14 +100,16 @@ export function LandingHeader() {
     <header className="w-full">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
             {loading && "Loading…"}
             {!loading && profile?.display_name}
             {!loading && !profile && "WoofVillage"}
           </h1>
 
           {profile?.tagline && (
-            <p className="mt-1 text-sm text-black/60">{profile.tagline}</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              {profile.tagline}
+            </p>
           )}
 
           {error && (
@@ -140,7 +142,7 @@ export function LandingHeader() {
       </div>
 
       {toast && (
-        <div className="mt-3 inline-flex rounded-2xl border border-black/10 bg-white/80 px-3 py-2 text-sm shadow-sm">
+        <div className="mt-3 inline-flex rounded-2xl border border-black/10 bg-white/90 px-3 py-2 text-sm text-text-secondary shadow-sm">
           {toast}
         </div>
       )}

@@ -10,11 +10,20 @@ export function Container({ size = "xl", className, ...props }: ContainerProps) 
     <div
       {...props}
       className={clsx(
-        "mx-auto w-full px-4 sm:px-6 lg:px-10",
+        // Center + predictable side padding
+        // - tighter on phones
+        // - comfortable on laptops
+        // - generous on wide screens without feeling like “miles of air”
+        "mx-auto w-full px-4 sm:px-6 lg:px-10 2xl:px-12",
+
+        // Widths
         size === "md" && "max-w-4xl",
         size === "lg" && "max-w-6xl",
-        // Wider, boutique landing feel (not SaaS column)
-        size === "xl" && "max-w-[1400px] 2xl:max-w-[1600px]",
+
+        // XL: boutique landing feel with a smooth ramp (not a sudden jump)
+        // Clamp prevents it from feeling too narrow at 1280–1440
+        size === "xl" && "max-w-[min(1400px,94vw)] 2xl:max-w-[min(1600px,92vw)]",
+
         className
       )}
     />

@@ -89,7 +89,7 @@ export function LandingHeader({
         onClick: async () => {
           try {
             await navigator.clipboard.writeText(profile.zelle_recipient!);
-            setToast("Zelle recipient copied!");
+            setToast("Zelle recipient copied.");
             window.setTimeout(() => setToast(null), 2200);
           } catch {
             setToast("Could not copy. Please copy manually.");
@@ -108,8 +108,8 @@ export function LandingHeader({
     return "WoofVillage";
   }, [loading, profile]);
 
-  const tagline = profile?.tagline ?? "Meet your next best friend — safely.";
-  const statusLine = "Pups posted often • Replies usually fast";
+  const tagline = profile?.tagline ?? "Screening-first rehoming. Clear listings. Calm meetups.";
+  const statusLine = loading ? "Loading profile…" : "Updated often • Replies usually fast";
 
   return (
     <header className="w-full animate-fade-in">
@@ -125,16 +125,18 @@ export function LandingHeader({
                 {displayName}
               </h1>
 
-              <p className="mt-3 text-base leading-relaxed text-ink-secondary sm:text-lg">
+              <p className="mt-3 max-w-[70ch] text-base leading-relaxed text-ink-secondary sm:text-lg">
                 {tagline}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
                 <span
                   className={cls(
-                    "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 shadow-soft",
-                    "border border-black/10 bg-surface/75",
-                    "transition-all hover:shadow-medium hover:-translate-y-px hover:bg-surface/85"
+                    "relative inline-flex items-center gap-2 rounded-full px-3.5 py-1.5",
+                    "border border-black/5 ring-1 ring-black/5",
+                    "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.70),rgba(250,242,232,0.55))]",
+                    "shadow-soft backdrop-blur-md",
+                    "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
                   )}
                 >
                   <span className="h-2 w-2 rounded-full bg-primary animate-gentle-pulse" />
@@ -144,17 +146,17 @@ export function LandingHeader({
 
               {/* Trust cues */}
               <div className="mt-5 flex flex-wrap gap-2.5">
-                <Badge variant="neutral" className="gap-1.5 transition-all hover:scale-105">
+                <Badge variant="neutral" className="gap-1.5">
                   <ShieldCheck size={14} />
                   Clear info
                 </Badge>
-                <Badge variant="neutral" className="gap-1.5 transition-all hover:scale-105">
+                <Badge variant="neutral" className="gap-1.5">
                   <HeartHandshake size={14} />
                   Screening-first
                 </Badge>
-                <Badge variant="neutral" className="gap-1.5 transition-all hover:scale-105">
+                <Badge variant="neutral" className="gap-1.5">
                   <PawPrint size={14} />
-                  Long-term match
+                  Long-term fit
                 </Badge>
               </div>
 
@@ -176,7 +178,7 @@ export function LandingHeader({
                 size="sm"
                 className="w-full rounded-full sm:w-auto"
               >
-                Browse the pack
+                Browse pups
               </Button>
             </Link>
 
@@ -191,9 +193,21 @@ export function LandingHeader({
             </Link>
           </div>
 
-          {/* Social/Payment icons (secondary, visually quieter) */}
+          {/* Social/Payment tray (intentional + quiet) */}
           {links.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2.5 opacity-85 transition-opacity hover:opacity-100">
+            <div
+              className={cls(
+                "relative flex flex-wrap items-center justify-end gap-2.5",
+                "rounded-3xl px-3 py-3",
+                "border border-black/5 ring-1 ring-black/5",
+                "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.55),rgba(250,242,232,0.40))]",
+                "shadow-soft backdrop-blur-md",
+                "opacity-95 transition-opacity hover:opacity-100"
+              )}
+            >
+              {/* ONE small accent, different corner than other panels */}
+              <CornerAccent position="bottom-left" rotate="7" emoji="🐾" />
+
               {links.map(({ key, label, href, onClick, Icon }) =>
                 href ? (
                   <a
@@ -203,14 +217,14 @@ export function LandingHeader({
                     rel="noreferrer"
                     aria-label={label}
                     title={label}
-                    className="transition-transform hover:scale-110"
+                    className="inline-flex"
                   >
                     <IconButton label={label}>
                       <Icon size={18} />
                     </IconButton>
                   </a>
                 ) : (
-                  <IconButton key={key} label={label} onClick={onClick} className="transition-transform hover:scale-110">
+                  <IconButton key={key} label={label} onClick={onClick}>
                     <Icon size={18} />
                   </IconButton>
                 )
@@ -221,7 +235,18 @@ export function LandingHeader({
       </div>
 
       {/* "Browse vibes" row */}
-      <div className="mt-8 rounded-3xl border border-black/10 bg-surface/60 p-5 shadow-soft transition-all hover:shadow-medium hover:bg-surface/70">
+      <div
+        className={cls(
+          "relative mt-8 rounded-3xl p-5",
+          "border border-black/5 ring-1 ring-black/5",
+          "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.62),rgba(250,242,232,0.46))]",
+          "shadow-soft backdrop-blur-md",
+          "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
+        )}
+      >
+        {/* ONE small accent, different corner than tray */}
+        <CornerAccent position="bottom-left" rotate="-6" emoji="🐕" />
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-xs font-bold uppercase tracking-wider text-primary-700">
             browse vibes
@@ -238,7 +263,14 @@ export function LandingHeader({
       </div>
 
       {toast && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-surface/75 px-4 py-2 text-sm font-medium text-ink-primary shadow-medium">
+        <div
+          className={cls(
+            "mt-4 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium",
+            "border border-black/5 ring-1 ring-black/5",
+            "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.70),rgba(250,242,232,0.55))]",
+            "text-ink-primary shadow-medium backdrop-blur-md"
+          )}
+        >
           <span className="text-base">✅</span>
           <span>{toast}</span>
         </div>
@@ -249,13 +281,33 @@ export function LandingHeader({
 
 function BrandMark() {
   return (
-    <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-3xl border border-black/10 bg-surface/75 shadow-soft transition-all hover:shadow-medium hover:scale-105">
-      <div className="grid h-14 w-14 place-items-center rounded-3xl bg-linear-to-br from-[#2f2a26] to-[#3a3430] text-[#f4efe8] shadow-medium transition-transform hover:scale-110">
-        <span className="text-3xl leading-none transition-transform hover:rotate-12">🐶</span>
+    <div
+      className={cls(
+        "relative grid h-16 w-16 shrink-0 place-items-center rounded-3xl",
+        "border border-black/5 ring-1 ring-black/5",
+        "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.70),rgba(250,242,232,0.55))]",
+        "shadow-soft backdrop-blur-md",
+        "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
+      )}
+    >
+      <div
+        className={cls(
+          "relative grid h-14 w-14 place-items-center rounded-3xl",
+          "bg-[linear-gradient(to_br,#2f2a26,#3a3430)]",
+          "text-[#f6f1ea] shadow-medium"
+        )}
+      >
+        <span className="text-3xl leading-none">🐶</span>
       </div>
 
-      {/* small "heart" accent */}
-      <div className="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full bg-linear-to-br from-secondary/85 to-secondary-500 text-white text-xs font-semibold shadow-soft transition-transform hover:scale-105">
+      {/* small heart accent (keep this one; it’s the brand signature) */}
+      <div
+        className={cls(
+          "absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full",
+          "bg-[linear-gradient(to_br,rgba(208,140,96,0.90),rgba(181,90,58,0.90))]",
+          "text-white text-xs font-semibold shadow-soft"
+        )}
+      >
         ❤
       </div>
     </div>
@@ -270,16 +322,59 @@ function Chip({
   return (
     <button
       type="button"
-      className={[
-        "inline-flex items-center rounded-full px-4 py-2 text-xs font-medium",
-        "border border-black/10 bg-surface/75 shadow-soft",
-        "hover:shadow-medium hover:-translate-y-0.5 hover:bg-surface/90 hover:border-black/14 hover:scale-105",
-        "active:translate-y-0 active:scale-100",
-        "transition-all",
-      ].join(" ")}
+      className={cls(
+        "relative inline-flex items-center rounded-full px-4 py-2 text-xs font-medium",
+        "border border-black/5 ring-1 ring-black/5",
+        "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.60),rgba(250,242,232,0.44))]",
+        "shadow-soft backdrop-blur-md",
+        "hover:shadow-medium hover:border-black/8 hover:ring-black/8",
+        "active:opacity-[0.98]"
+      )}
     >
-      {children}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_70%)] opacity-35"
+      />
+      <span className="relative">{children}</span>
     </button>
+  );
+}
+
+/**
+ * Small, single-purpose accent.
+ * One per container max. Emoji only. Different corners so it feels organic.
+ */
+function CornerAccent({
+  position,
+  rotate,
+  emoji,
+}: {
+  position: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  rotate: string; // "-6", "7"
+  emoji: string;
+}) {
+  const pos =
+    position === "top-left"
+      ? "left-[-10px] top-[-10px]"
+      : position === "top-right"
+      ? "right-[-10px] top-[-10px]"
+      : position === "bottom-left"
+      ? "left-[-10px] bottom-[-10px]"
+      : "right-[-10px] bottom-[-10px]";
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cls(
+        "pointer-events-none absolute grid h-9 w-9 place-items-center rounded-2xl",
+        "bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f6f1ea]",
+        "shadow-medium opacity-85",
+        pos,
+        `rotate-[${rotate}deg]`
+      )}
+    >
+      <span className="text-sm">{emoji}</span>
+    </span>
   );
 }
 

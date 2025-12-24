@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/Button";
 
 export function HeroExperience() {
   return (
-    <section className="relative mt-12 sm:mt-16 animate-fade-in">
-      {/* gentle visual separation from header */}
-      <div className="pointer-events-none absolute left-0 right-0 -top-6 h-px bg-linear-to-r from-transparent via-black/10 to-transparent" />
+    <section className="relative mt-12 animate-fade-in sm:mt-16">
+      {/* gentle visual seam */}
+      <div className="pointer-events-none absolute left-0 right-0 -top-6 h-px bg-[linear-gradient(to_right,transparent,rgba(0,0,0,0.10),transparent)]" />
 
-      {/* soft local atmosphere (warm, boutique, non-saas) */}
+      {/* soft local atmosphere */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-20 -right-28 h-72 w-72 rounded-full bg-primary/18 blur-3xl animate-gentle-pulse" />
-        <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-secondary/18 blur-3xl animate-gentle-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute left-10 top-12 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
+        <div className="absolute -top-20 -right-28 h-72 w-72 rounded-full bg-primary/14 blur-3xl" />
+        <div
+          className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-secondary/12 blur-3xl"
+          style={{ animationDelay: "1s" }}
+        />
+        <div className="absolute left-10 top-12 h-44 w-44 rounded-full bg-rose-400/8 blur-3xl" />
       </div>
 
       <div className="grid gap-10 lg:grid-cols-12 lg:items-end">
@@ -21,16 +24,16 @@ export function HeroExperience() {
           <div className="flex flex-wrap gap-2">
             <Badge variant="primary">screening-first</Badge>
             <Badge variant="secondary">safe rehoming</Badge>
-            <Badge variant="neutral">clear info</Badge>
+            <Badge variant="neutral">clear listings</Badge>
           </div>
 
           <h2 className="mt-5 text-3xl font-bold tracking-tight text-ink-primary sm:text-4xl lg:text-5xl">
-            Meet your next best friend.
+            Meet your next best friend — with clarity.
           </h2>
 
           <p className="mt-5 max-w-[62ch] text-base leading-relaxed text-ink-secondary sm:text-lg">
-            Not a random social post. A warm, intentional place to find a pup you'll
-            love for years — with clarity, care, and a process designed to protect everyone.
+            This isn’t a random social post. Every pup is listed with the details that
+            matter, and a simple process that keeps meetups calm and decisions informed.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -40,7 +43,7 @@ export function HeroExperience() {
                 size="md"
                 className="w-full rounded-full sm:w-auto"
               >
-                Browse the pack
+                Browse pups
               </Button>
             </Link>
 
@@ -58,49 +61,26 @@ export function HeroExperience() {
           {/* Promises */}
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <MiniPromise
-              title="No surprises"
-              body="We post the details that matter."
+              title="Real details"
+              body="Age, temperament, needs, and fit — posted plainly."
               emoji="✅"
             />
             <MiniPromise
-              title="No pressure"
-              body="Ask questions. We'll guide you."
-              emoji="💛"
+              title="Respectful pace"
+              body="Ask questions. Decide when you’re confident."
+              emoji="🧠"
             />
             <MiniPromise
-              title="Real match"
-              body="We care about fit, not speed."
-              emoji="🤝"
+              title="Safer meetups"
+              body="Clear expectations and calm handoffs."
+              emoji="🛡️"
             />
           </div>
         </div>
 
-        {/* Personality cluster */}
+        {/* Right signal panel (premium, not “stickers”) */}
         <div className="hidden lg:col-span-4 lg:block">
-          <div className="relative mx-auto h-52 w-52">
-            <Sticker
-              className="absolute left-0 top-0 -rotate-8 transition-transform hover:scale-105 hover:-rotate-6"
-              text="best friends"
-              emoji="🐶"
-              tone="primary"
-            />
-            <Sticker
-              className="absolute right-0 top-10 rotate-10 transition-transform hover:scale-105 hover:rotate-12"
-              text="safe + calm"
-              emoji="🛡️"
-              tone="secondary"
-            />
-            <Sticker
-              className="absolute left-10 bottom-0 -rotate-2 transition-transform hover:scale-105 hover:rotate-0"
-              text="happy homes"
-              emoji="🏡"
-              tone="neutral"
-            />
-          </div>
-
-          <div className="mt-4 text-center text-xs font-semibold text-ink-muted italic">
-            a vibe check before you adopt 🐾
-          </div>
+          <SignalPanel />
         </div>
       </div>
     </section>
@@ -119,51 +99,85 @@ function MiniPromise({
   return (
     <div className="group rounded-3xl border border-black/10 bg-surface/70 p-5 shadow-soft transition-all hover:shadow-medium hover:-translate-y-1 hover:border-black/14 hover:bg-surface/80">
       <div className="flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-linear-to-br from-[#2f2a26] to-[#3a3430] text-[#f4efe8] shadow-medium transition-transform group-hover:scale-110">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f4efe8] shadow-medium transition-transform group-hover:scale-110">
           <span className="text-base">{emoji}</span>
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-bold text-ink-primary">{title}</div>
-          <div className="mt-1.5 text-sm leading-relaxed text-ink-secondary">{body}</div>
+          <div className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+            {body}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Sticker({
-  text,
-  emoji,
-  className = "",
-  tone = "neutral",
-}: {
-  text: string;
-  emoji: string;
-  className?: string;
-  tone?: "primary" | "secondary" | "neutral";
-}) {
-  const toneClass =
-    tone === "primary"
-      ? "from-primary/25 to-surface/85"
-      : tone === "secondary"
-        ? "from-secondary/25 to-surface/85"
-        : "from-black/8 to-surface/85";
+function SignalPanel() {
+  return (
+    <div className="relative">
+      {/* panel */}
+      <div
+        className={[
+          "relative overflow-hidden rounded-[28px] p-5",
+          "border border-black/5 ring-1 ring-black/5",
+          "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.50),rgba(250,242,232,0.36))]",
+          "shadow-soft backdrop-blur-md",
+        ].join(" ")}
+      >
+        {/* sheen */}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_70%)] opacity-30" />
 
+        <div className="relative">
+          <div className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            what to expect
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <SignalRow emoji="🧾" title="Transparent terms" body="If a deposit exists, it’s stated on the listing." />
+            <SignalRow emoji="🧍‍♀️🧍" title="Calm meetups" body="Public locations preferred. Clear expectations." />
+            <SignalRow emoji="🏡" title="Fit-first" body="We optimize for the right home — not the fastest pickup." />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-black/5 bg-white/10 px-4 py-3 text-xs font-semibold text-ink-primary">
+            You should feel confident before you commit. 🐾
+          </div>
+        </div>
+      </div>
+
+      {/* tiny floating accent (subtle, not childish) */}
+      <div className="pointer-events-none absolute -right-3 -top-3 grid h-10 w-10 place-items-center rounded-2xl bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f4efe8] shadow-medium">
+        🐶
+      </div>
+    </div>
+  );
+}
+
+function SignalRow({
+  emoji,
+  title,
+  body,
+}: {
+  emoji: string;
+  title: string;
+  body: string;
+}) {
   return (
     <div
       className={[
-        "rounded-3xl border border-black/10 px-4 py-3 shadow-medium",
-        "bg-linear-to-br",
-        toneClass,
-        "backdrop-blur-sm",
-        "cursor-default",
-        className,
+        "flex items-start gap-3 rounded-2xl p-4",
+        "border border-black/5 ring-1 ring-black/5",
+        "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.62),rgba(250,242,232,0.46))]",
+        "shadow-soft",
       ].join(" ")}
     >
-      <div className="text-xs font-bold uppercase tracking-wider text-ink-muted">
-        {text}
+      <div className="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f6f1ea] shadow-soft">
+        <span className="text-sm">{emoji}</span>
       </div>
-      <div className="mt-1.5 text-2xl transition-transform hover:scale-110">{emoji}</div>
+      <div className="min-w-0">
+        <div className="text-sm font-bold text-ink-primary">{title}</div>
+        <div className="mt-1 text-sm leading-relaxed text-ink-secondary">{body}</div>
+      </div>
     </div>
   );
 }

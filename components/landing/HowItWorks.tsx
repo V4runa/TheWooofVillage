@@ -4,171 +4,194 @@ type Step = {
   title: string;
   body: string;
   emoji: string;
+  bullets: string[];
 };
 
-const DEFAULT_STEPS: Step[] = [
+const STEPS: Step[] = [
   {
-    title: "Browse the pack",
-    body: "See pups with real details — no guessing, no vague posts.",
+    title: "Browse listings",
+    body: "Real details, clear expectations, and what matters for a good fit.",
     emoji: "📲",
+    bullets: ["Age + temperament", "Needs + home fit", "Clear next steps"],
   },
   {
-    title: "Say hi + ask questions",
-    body: "We’ll help you understand temperament, needs, and the best fit.",
+    title: "Message + ask anything",
+    body: "Straight answers, fast clarity, and no pressure if it’s not right.",
     emoji: "💬",
+    bullets: ["Temperament questions", "Schedule + logistics", "No pressure"],
   },
   {
-    title: "Hold with a deposit (optional)",
-    body: "If you’re ready, you can place a hold while we confirm everything.",
+    title: "Confirm the match",
+    body: "If a hold or deposit is used, it’s stated on the listing with terms.",
     emoji: "🧾",
+    bullets: ["Optional when offered", "Transparent terms", "Respectful timeline"],
   },
   {
-    title: "Meet + complete the match",
-    body: "A calm, safe handoff — the goal is a long-term best-friend bond.",
+    title: "Meet + safe handoff",
+    body: "A calm meetup, a clear decision, and a smooth transition home.",
     emoji: "🏡",
+    bullets: ["Public meetups preferred", "Bring questions", "Long-term fit first"],
   },
 ];
 
 export function HowItWorks({ id = "how-it-works" }: { id?: string }) {
   return (
-    <section id={id} className="relative">
+    <section id={id} className="relative animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="text-xs font-bold uppercase tracking-wider text-primary-700">
-            simple + safe
+            the process
           </div>
-          <h3 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+
+          <h3 className="mt-2 text-2xl font-bold tracking-tight text-ink-primary sm:text-3xl">
             How it works
           </h3>
-          <p className="mt-2 max-w-[65ch] text-base text-text-secondary">
-            Adoption should feel exciting — not stressful. Here’s the flow, designed to keep
-            things cute, clear, and safe.
+
+          <p className="mt-3 max-w-[70ch] text-base leading-relaxed text-ink-secondary sm:text-lg">
+            Simple, screening-first, and designed to protect the pup while respecting your time.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant="success">friendly</Badge>
           <Badge variant="neutral">clear</Badge>
-          <Badge variant="primary">safe</Badge>
+          <Badge variant="primary">screening-first</Badge>
+          <Badge variant="success">safe</Badge>
         </div>
       </div>
 
-      {/* Timeline */}
-      <div className="mt-7 grid gap-4 lg:grid-cols-12">
-        {/* Left rail (storybook vibe) */}
-        <div className="hidden lg:col-span-3 lg:block">
-          <div className="sticky top-6 rounded-3xl border border-black/10 bg-white/45 p-5 shadow-soft">
-            <div className="text-sm font-bold text-text-primary">Your adoption path</div>
-            <div className="mt-2 text-sm text-text-secondary">
-              A gentle process that protects you and the pup.
-            </div>
+      {/* Framed panel (matches Feed/Trust rhythm) */}
+      <div
+        className={[
+          "relative mt-7 rounded-[28px] p-4 sm:p-5",
+          "border border-black/5 ring-1 ring-black/5",
+          "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.50),rgba(250,242,232,0.36))]",
+          "shadow-soft backdrop-blur-md",
+        ].join(" ")}
+      >
+        {/* soft path glow */}
+        <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[radial-gradient(600px_220px_at_18%_12%,rgba(127,175,155,0.16),transparent_60%),radial-gradient(700px_240px_at_88%_45%,rgba(208,140,96,0.12),transparent_55%)]" />
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge variant="neutral">no pressure</Badge>
-              <Badge variant="neutral">real details</Badge>
-              <Badge variant="neutral">right fit</Badge>
-            </div>
-
-            <div className="mt-5 text-xs font-semibold text-text-muted">
-              pro tip: trust your gut 🐾
-            </div>
-          </div>
+        {/* Steps grid */}
+        <div className="relative grid gap-4 lg:grid-cols-2">
+          {STEPS.map((s, i) => (
+            <StepCard
+              key={s.title}
+              index={i + 1}
+              title={s.title}
+              body={s.body}
+              emoji={s.emoji}
+              bullets={s.bullets}
+            />
+          ))}
         </div>
 
-        {/* Steps */}
-        <div className="lg:col-span-9">
-          <div className="relative space-y-3">
-            {/* vertical line (mobile + desktop) */}
-            <div className="pointer-events-none absolute left-5 top-0 hidden h-full w-px bg-black/10 sm:block" />
+        {/* Bottom note (quiet, authoritative) */}
+        <div className="relative mt-5 overflow-hidden rounded-2xl border border-black/5 ring-1 ring-black/5 bg-white/10 px-5 py-4 text-xs font-semibold leading-relaxed text-ink-primary shadow-soft backdrop-blur-md">
+          {/* tiny, organic corner accent (single) */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-2 -top-2 grid h-9 w-9 place-items-center rounded-2xl bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f6f1ea] shadow-medium rotate-6 opacity-85"
+          >
+            <span className="text-sm">🐾</span>
+          </span>
 
-            {DEFAULT_STEPS.map((s, index) => (
-              <StepRow
-                key={s.title}
-                stepNumber={index + 1}
-                title={s.title}
-                body={s.body}
-                emoji={s.emoji}
-                isLast={index === DEFAULT_STEPS.length - 1}
-              />
-            ))}
-          </div>
+          We prioritize good matches. If something feels off, we’d rather pause than rush.
         </div>
       </div>
     </section>
   );
 }
 
-function StepRow({
+function StepCard({
+  index,
   title,
   body,
   emoji,
-  stepNumber,
-  isLast,
+  bullets,
 }: {
+  index: number;
   title: string;
   body: string;
   emoji: string;
-  stepNumber: number;
-  isLast: boolean;
+  bullets: string[];
 }) {
   return (
     <div
       className={[
-        "group relative",
-        "rounded-3xl border border-black/10 bg-white/55 shadow-soft",
-        "p-5 sm:p-6",
-        "transition",
-        "hover:shadow-medium hover:-translate-y-px hover:border-primary/25",
+        "group relative overflow-hidden rounded-3xl p-5 sm:p-6",
+        "border border-black/5 ring-1 ring-black/5",
+        "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.62),rgba(250,242,232,0.46))]",
+        "shadow-soft backdrop-blur-md",
+        "transition-[transform,box-shadow,border-color] duration-300 ease-out",
+        "hover:shadow-medium hover:-translate-y-[1px] hover:border-black/8 hover:ring-black/8",
       ].join(" ")}
     >
-      <div className="flex items-start gap-4">
-        {/* node */}
+      {/* sheen */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_70%)] opacity-30" />
+
+      {/* single, consistent hover accent — bottom right */}
+      <span
+        aria-hidden="true"
+        className={[
+          "pointer-events-none absolute z-[2]",
+          "right-3 bottom-3",
+          "grid h-8 w-8 place-items-center rounded-2xl",
+          "bg-[linear-gradient(to_br,#2f2a26,#3a3430)] text-[#f6f1ea]",
+          "shadow-medium",
+          "opacity-0 transition-opacity duration-200",
+          "group-hover:opacity-85",
+        ].join(" ")}
+      >
+        <span className="text-[12px] leading-none translate-y-[0.5px]">
+          {emoji}
+        </span>
+      </span>
+
+      <div className="relative z-[1] flex items-start gap-4">
+        {/* Medallion */}
         <div className="relative shrink-0">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-black to-neutral-800 text-white shadow-medium">
+          <div
+            className={[
+              "grid h-12 w-12 place-items-center rounded-2xl",
+              "bg-[linear-gradient(to_br,#2f2a26,#3a3430)]",
+              "text-[#f6f1ea] shadow-medium",
+              "transition-transform duration-200 group-hover:scale-[1.03]",
+            ].join(" ")}
+          >
             <span className="text-base">{emoji}</span>
           </div>
 
-          <div className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-primary text-white text-xs font-bold shadow-medium">
-            {stepNumber}
+          {/* Step number */}
+          <div className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full border border-black/10 bg-surface/90 text-[11px] font-bold text-ink-primary shadow-soft">
+            {index}
           </div>
-
-          {/* connector cap for nicer endings */}
-          {!isLast ? (
-            <div className="pointer-events-none absolute left-1/2 top-[52px] hidden h-6 w-px -translate-x-1/2 bg-black/10 sm:block" />
-          ) : null}
         </div>
 
-        {/* content */}
+        {/* Copy */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-base font-bold text-text-primary">{title}</div>
-            <span className="rounded-full bg-black/5 px-2 py-1 text-xs font-semibold text-text-muted">
-              step {stepNumber}
+            <div className="text-base font-bold text-ink-primary">{title}</div>
+            <span className="rounded-full border border-black/5 bg-white/10 px-2 py-1 text-[11px] font-semibold text-ink-muted">
+              step
             </span>
           </div>
 
-          <div className="mt-2 text-sm leading-relaxed text-text-secondary">
-            {body}
-          </div>
+          <p className="mt-2 text-sm leading-relaxed text-ink-secondary">{body}</p>
 
-          {/* tiny “cute social” micro-delight (subtle) */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge variant="neutral" className="text-xs">
-              easy
-            </Badge>
-            <Badge variant="neutral" className="text-xs">
-              ask anytime
-            </Badge>
-            <Badge variant="neutral" className="text-xs">
-              pup-first
-            </Badge>
-          </div>
+          <ul className="mt-4 space-y-2 text-sm text-ink-secondary">
+            {bullets.slice(0, 3).map((b) => (
+              <li key={b} className="flex gap-3">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/35" />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* paw reaction (only on larger) */}
-        <div className="hidden sm:block text-2xl opacity-0 transition-opacity group-hover:opacity-100">
-          🐾
+        {/* quiet check */}
+        <div className="hidden text-lg text-ink-muted opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:block">
+          ✓
         </div>
       </div>
     </div>

@@ -9,29 +9,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Boutique surfaces: “cream glass”, not white
-        cream: {
-          50: "#fbf7f1",
-          100: "#f4eee6",
-          200: "#ebe2d6",
-          300: "#dfd2c2",
-        },
-
+        /**
+         * Semantic tokens (source of truth in globals.css :root)
+         * Usage examples:
+         * - text-ink-primary
+         * - text-text-muted
+         * - bg-surface
+         * - border-black/5 still works for “linework”
+         */
         ink: {
-          primary: "#2b2724",
-          secondary: "#4a433d",
-          muted: "#6b625a",
-        },
-        
-        surface: {
-          DEFAULT: "#F4EFE7",
-          light: "#F7F1EA",
-          muted: "#EBE2D6",
+          primary: "rgb(var(--ink-primary) / <alpha-value>)",
+          secondary: "rgb(var(--ink-secondary) / <alpha-value>)",
+          muted: "rgb(var(--text-muted) / <alpha-value>)",
         },
 
-        // Your brand hues stay (primary/secondary)
+        text: {
+          primary: "rgb(var(--ink-primary) / <alpha-value>)",
+          secondary: "rgb(var(--ink-secondary) / <alpha-value>)",
+          muted: "rgb(var(--text-muted) / <alpha-value>)",
+        },
+
+        surface: {
+          DEFAULT: "rgb(var(--surface-2) / <alpha-value>)",
+          light: "rgb(var(--surface-1) / <alpha-value>)",
+          muted: "rgb(var(--surface-0) / <alpha-value>)",
+        },
+
         primary: {
-          DEFAULT: "#7FAF9B",
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
           50: "#f0f7f5",
           100: "#d9ebe6",
           200: "#b7d7cd",
@@ -45,7 +50,7 @@ const config: Config = {
         },
 
         secondary: {
-          DEFAULT: "#D08C60",
+          DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
           50: "#faf6f2",
           100: "#f4e9de",
           200: "#e8d1bd",
@@ -58,10 +63,15 @@ const config: Config = {
           900: "#5b2b24",
         },
 
-        text: {
-          primary: "#2b2724",
-          secondary: "#4a433d",
-          muted: "#6b625a",
+        /**
+         * Optional: keep “cream” as a palette for one-off utilities,
+         * but avoid using it for core primitives (use surface tokens instead).
+         */
+        cream: {
+          50: "#fbf7f1",
+          100: "#f4eee6",
+          200: "#ebe2d6",
+          300: "#dfd2c2",
         },
       },
 
@@ -72,6 +82,7 @@ const config: Config = {
         ambient: "0 3px 10px rgba(40, 35, 30, 0.08)",
         glow: "0 0 20px rgba(127, 175, 155, 0.12)",
       },
+
       animation: {
         "fade-in": "fadeIn 0.5s ease-out",
         "gentle-pulse": "gentle-pulse 3s ease-in-out infinite",

@@ -9,26 +9,74 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#FAFAF8",
-    
+        // Boutique surfaces: “cream glass”, not white
+        cream: {
+          50: "#fbf7f1",
+          100: "#f4eee6",
+          200: "#ebe2d6",
+          300: "#dfd2c2",
+        },
+
+        ink: {
+          primary: "#2b2724",
+          secondary: "#4a433d",
+          muted: "#6b625a",
+        },
+        
+        surface: {
+          DEFAULT: "#F4EFE7",
+          light: "#F7F1EA",
+          muted: "#EBE2D6",
+        },
+
+        // Your brand hues stay (primary/secondary)
         primary: {
           DEFAULT: "#7FAF9B",
-          foreground: "#0F172A",
+          50: "#f0f7f5",
+          100: "#d9ebe6",
+          200: "#b7d7cd",
+          300: "#7FAF9B",
+          400: "#5a9a85",
+          500: "#3d7f6a",
+          600: "#2d6655",
+          700: "#265347",
+          800: "#22433a",
+          900: "#1f3831",
         },
-    
+
         secondary: {
           DEFAULT: "#D08C60",
-          foreground: "#0F172A",
+          50: "#faf6f2",
+          100: "#f4e9de",
+          200: "#e8d1bd",
+          300: "#D08C60",
+          400: "#c2744a",
+          500: "#b55a3a",
+          600: "#a74a2f",
+          700: "#8b3c29",
+          800: "#703228",
+          900: "#5b2b24",
         },
-    
+
         text: {
-          primary: "#111827",    // near-black, very readable
-          secondary: "#374151",  // muted but still readable
-          muted: "#6B7280",      // metadata only
+          primary: "#2b2724",
+          secondary: "#4a433d",
+          muted: "#6b625a",
         },
       },
+
+      boxShadow: {
+        soft: "0 2px 8px rgba(40, 35, 30, 0.08)",
+        medium: "0 6px 16px rgba(40, 35, 30, 0.12)",
+        large: "0 12px 32px rgba(40, 35, 30, 0.16)",
+        ambient: "0 3px 10px rgba(40, 35, 30, 0.08)",
+        glow: "0 0 20px rgba(127, 175, 155, 0.12)",
+      },
+      animation: {
+        "fade-in": "fadeIn 0.5s ease-out",
+        "gentle-pulse": "gentle-pulse 3s ease-in-out infinite",
+      },
     },
-    
   },
   plugins: [],
 };

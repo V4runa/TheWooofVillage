@@ -10,14 +10,35 @@ export function Card({ variant = "surface", className, ...props }: CardProps) {
     <div
       {...props}
       className={clsx(
-        // Base: make text readable by default and increase border contrast slightly
-        "rounded-2xl border text-gray-900 transition-shadow",
+        // Base: softer contrast, warmer default surface, no pure white panels
+        "rounded-3xl border text-text-primary",
+        "backdrop-blur-sm",
+        "transition-all duration-300 ease-out",
 
         // Variants
-        variant === "surface" && "bg-white border-black/10",
+        variant === "surface" &&
+          [
+            // warm parchment glass with subtle texture
+            "bg-[#F4EFE7]/80",
+            "border-black/10",
+            "shadow-soft",
+            "backdrop-blur-md",
+          ].join(" "),
+
         variant === "elevated" &&
-          "bg-white border-black/10 shadow-sm hover:shadow-md",
-        variant === "ghost" && "bg-transparent border-transparent",
+          [
+            // slightly brighter, still warm (NOT white) with enhanced depth
+            "bg-[#F7F1EA]/85",
+            "border-black/12",
+            "shadow-medium",
+            "backdrop-blur-md",
+            "hover:shadow-large",
+            "hover:-translate-y-1",
+            "hover:border-black/16",
+            "hover:bg-[#F7F1EA]/90",
+          ].join(" "),
+
+        variant === "ghost" && "bg-transparent border-transparent shadow-none",
 
         className
       )}
@@ -28,13 +49,13 @@ export function Card({ variant = "surface", className, ...props }: CardProps) {
 type CardSectionProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function CardHeader({ className, ...props }: CardSectionProps) {
-  return <div {...props} className={clsx("p-5 pb-3", className)} />;
+  return <div {...props} className={clsx("p-6 pb-4", className)} />;
 }
 
 export function CardContent({ className, ...props }: CardSectionProps) {
-  return <div {...props} className={clsx("p-5 pt-0", className)} />;
+  return <div {...props} className={clsx("p-6 pt-0", className)} />;
 }
 
 export function CardFooter({ className, ...props }: CardSectionProps) {
-  return <div {...props} className={clsx("p-5 pt-3", className)} />;
+  return <div {...props} className={clsx("p-6 pt-4", className)} />;
 }

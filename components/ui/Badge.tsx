@@ -6,7 +6,7 @@ type BadgeVariant = "neutral" | "primary" | "secondary" | "warning" | "success";
 type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
   variant?: BadgeVariant;
   /**
-   * Tiny boutique detail. Default is "auto" (deterministic by content),
+   * Tiny detail. Default is "auto" (deterministic by content),
    * set "none" to disable.
    */
   cornerAccent?: "auto" | "none" | "tl" | "tr" | "bl" | "br";
@@ -35,73 +35,78 @@ export function Badge({
 
   const base =
     "group relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold " +
-    "transition-[box-shadow,background-color,border-color,opacity,transform] duration-200 ease-out " +
-    "shadow-soft";
+    "select-none " +
+    "transition-[box-shadow,background-color,border-color,opacity,transform] duration-200 ease-out";
 
-  const definition = "border border-black/5 ring-1 ring-black/5";
+  // Photo-friendly definition (uses theme token line)
+  const definition = "border border-line/10 ring-1 ring-line/10";
 
+  // Micro sheen (keeps pills feeling “made”)
   const sheen =
     "before:pointer-events-none before:absolute before:inset-0 before:rounded-full " +
-    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.52),transparent_70%)] " +
-    "before:opacity-35";
+    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_70%)] " +
+    "before:opacity-55";
 
-  // Palette-correct tints (no neon)
   const variants = {
     neutral: clsx(
       definition,
       sheen,
-      "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.76),rgba(250,242,232,0.58))]",
+      "bg-white/70 backdrop-blur-md",
       "text-ink-secondary",
-      "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
+      "shadow-soft",
+      "hover:shadow-medium hover:border-line/16 hover:ring-line/14"
     ),
 
     primary: clsx(
-      // use a *primary-tinted* ring instead of black ring + primary ring fighting
-      "border border-primary/16 ring-1 ring-primary/14",
+      // meadow + sky tint; still readable on photos
+      "border border-primary/18 ring-1 ring-primary/14",
       sheen,
-      "bg-[linear-gradient(to_right,rgba(127,175,155,0.22),rgba(127,175,155,0.10))]",
+      "bg-[linear-gradient(90deg,rgba(63,161,126,0.18)_0%,rgba(79,156,255,0.12)_70%,rgba(255,255,255,0.55)_115%)]",
       "text-ink-primary",
-      "hover:shadow-ambient hover:border-primary/22 hover:ring-primary/20"
+      "shadow-soft",
+      "hover:shadow-ambient hover:border-primary/26 hover:ring-primary/20"
     ),
 
     secondary: clsx(
-      "border border-secondary/16 ring-1 ring-secondary/14",
+      // sun tint
+      "border border-secondary/18 ring-1 ring-secondary/14",
       sheen,
-      "bg-[linear-gradient(to_right,rgba(208,140,96,0.22),rgba(208,140,96,0.10))]",
+      "bg-[linear-gradient(90deg,rgba(255,141,74,0.18)_0%,rgba(255,141,74,0.10)_60%,rgba(255,255,255,0.55)_115%)]",
       "text-ink-primary",
-      "hover:shadow-ambient hover:border-secondary/22 hover:ring-secondary/20"
+      "shadow-soft",
+      "hover:shadow-ambient hover:border-secondary/26 hover:ring-secondary/20"
     ),
 
     warning: clsx(
-      definition,
+      // warm but not beige; uses sun palette lightly
+      "border border-sun-400/18 ring-1 ring-sun-400/12",
       sheen,
-      "bg-[linear-gradient(to_right,rgba(230,215,184,0.70),rgba(230,215,184,0.44))]",
+      "bg-[linear-gradient(90deg,rgba(255,192,113,0.20)_0%,rgba(255,246,232,0.70)_85%)]",
       "text-ink-primary",
-      "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
+      "shadow-soft",
+      "hover:shadow-ambient hover:border-sun-400/26 hover:ring-sun-400/18"
     ),
 
     success: clsx(
-      definition,
+      "border border-meadow-400/18 ring-1 ring-meadow-400/12",
       sheen,
-      // muted sage success (not mint/bright)
-      "bg-[linear-gradient(to_right,rgba(185,216,201,0.66),rgba(185,216,201,0.40))]",
+      "bg-[linear-gradient(90deg,rgba(79,203,122,0.16)_0%,rgba(241,251,244,0.72)_90%)]",
       "text-ink-primary",
-      "hover:shadow-medium hover:border-black/8 hover:ring-black/8"
+      "shadow-soft",
+      "hover:shadow-ambient hover:border-meadow-400/26 hover:ring-meadow-400/18"
     ),
   } as const;
 
   return (
     <span {...props} className={clsx(base, variants[variant], className)}>
-      {/* subtle corner detail (tiny + organic, not always same corner) */}
+      {/* tiny corner sparkle — brand (no brown) */}
       {corner !== "none" && (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2 w-2 rounded-full",
-            "opacity-60",
-            // warm accent, very quiet
-            "bg-[radial-gradient(circle,rgba(208,140,96,0.28),transparent_65%)]",
-            "group-hover:opacity-80 transition-opacity duration-200",
+            "opacity-60 group-hover:opacity-85 transition-opacity duration-200",
+            "bg-[radial-gradient(circle,rgba(255,255,255,0.70),rgba(79,156,255,0.18),rgba(63,161,126,0.14),transparent_72%)]",
             corner === "tr" && "right-1 top-1",
             corner === "tl" && "left-1 top-1",
             corner === "br" && "right-1 bottom-1",
@@ -110,7 +115,7 @@ export function Badge({
         />
       )}
 
-      <span className="relative inline-flex items-center">{children}</span>
+      <span className="relative inline-flex items-center gap-1">{children}</span>
     </span>
   );
 }

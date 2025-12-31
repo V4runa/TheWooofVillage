@@ -32,7 +32,6 @@ export function IconButton({
     if (cornerAccent === "none") return "none";
     if (cornerAccent !== "auto") return cornerAccent;
 
-    // Deterministic "organic" placement: stable per label (no random flicker)
     const sum = Array.from(label).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
     const corners = ["tr", "tl", "br", "bl"] as const;
     return corners[sum % corners.length];
@@ -48,12 +47,11 @@ export function IconButton({
         // layout
         "group relative inline-flex items-center justify-center rounded-2xl",
         // icon tone control (prevents harsh contrast)
-        "text-ink-muted",
-        "hover:text-ink-secondary",
+        "text-ink-muted hover:text-ink-secondary",
         // motion
-        "transition-[transform,box-shadow,background-color,border-color,opacity,color] duration-200 ease-out",
+        "transition-[transform,box-shadow,background-color,border-color,opacity,color,filter] duration-200 ease-out",
         // focus
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/28 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10",
         // disabled
         "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
 
@@ -62,18 +60,17 @@ export function IconButton({
 
         variant === "soft" &&
           [
-            // softer definition: ring + faint border
-            "border border-black/5 ring-1 ring-black/5",
-            // warm glass surface
-            "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.68),rgba(250,242,232,0.52))]",
-            "backdrop-blur-md",
+            // photo-friendly definition
+            "border border-line/10 ring-1 ring-line/10",
+            // clean glass surface
+            "bg-white/72 backdrop-blur-md",
             "shadow-soft",
 
-            // hover: premium lift, not “pop”
+            // hover: clarity + gentle lift
             "hover:shadow-medium hover:-translate-y-[1px]",
-            "hover:border-black/8 hover:ring-black/8",
-            // slightly clearer surface on hover (not brighter/whiter)
-            "hover:bg-[linear-gradient(to_bottom,rgba(255,252,246,0.74),rgba(252,246,238,0.58))]",
+            "hover:border-line/16 hover:ring-line/14",
+            "hover:bg-white/78",
+            "hover:saturate-[1.03] hover:brightness-[1.01]",
 
             // active: settle
             "active:translate-y-0 active:shadow-soft",
@@ -82,11 +79,10 @@ export function IconButton({
         variant === "ghost" &&
           [
             "border border-transparent ring-0",
-            "bg-transparent",
-            "hover:border-black/5 hover:ring-1 hover:ring-black/5",
-            // warm “mist” hover (avoid stark white)
-            "hover:bg-[linear-gradient(to_bottom,rgba(255,252,246,0.28),rgba(250,242,232,0.18))]",
-            "active:bg-[linear-gradient(to_bottom,rgba(255,252,246,0.22),rgba(250,242,232,0.14))]",
+            "bg-transparent shadow-none",
+            // clean mist hover (not beige)
+            "hover:bg-white/22 hover:border-line/12 hover:ring-1 hover:ring-line/10",
+            "active:bg-white/18",
           ].join(" "),
 
         className
@@ -97,22 +93,19 @@ export function IconButton({
         aria-hidden="true"
         className={clsx(
           "pointer-events-none absolute inset-0 rounded-2xl",
-          "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.50),transparent_60%)]",
-          variant === "ghost" ? "opacity-18" : "opacity-38"
+          "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_62%)]",
+          variant === "ghost" ? "opacity-18" : "opacity-42"
         )}
       />
 
-      {/* organic corner accent — very subtle, not flashy */}
+      {/* organic corner sparkle — brand (no brown) */}
       {corner !== "none" && (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2.5 w-2.5 rounded-full",
-            "opacity-70 blur-[0.2px]",
-            // warm accent that doesn't shout
-            "bg-[radial-gradient(circle,rgba(208,140,96,0.35),transparent_60%)]",
-            "group-hover:opacity-90",
-            "transition-opacity duration-200",
+            "opacity-65 group-hover:opacity-90 transition-opacity duration-200",
+            "bg-[radial-gradient(circle,rgba(255,255,255,0.75),rgba(79,156,255,0.20),rgba(63,161,126,0.14),transparent_72%)]",
             corner === "tr" && "right-1.5 top-1.5",
             corner === "tl" && "left-1.5 top-1.5",
             corner === "br" && "right-1.5 bottom-1.5",

@@ -7,7 +7,7 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   variant?: CardVariant;
 
   /**
-   * Tiny boutique corner detail. Default "auto" (deterministic by data-accent/id).
+   * Tiny corner detail. Default "auto" (deterministic by data-accent/id).
    * Set "none" to disable.
    */
   cornerAccent?: "auto" | "none" | "tl" | "tr" | "bl" | "br";
@@ -27,46 +27,43 @@ export function Card({
   ...props
 }: CardProps) {
   const base =
-    "relative rounded-3xl text-text-primary " +
-    "backdrop-blur-md " +
-    "transition-[transform,box-shadow,background-color,border-color,opacity] duration-300 ease-out";
+    "relative rounded-3xl text-ink-primary " +
+    "transition-[transform,box-shadow,background-color,border-color,opacity] duration-200 ease-out";
 
-  // Softer definition everywhere, but we’ll vary strength per variant.
-  const definition = "border border-black/5 ring-1 ring-black/5";
+  // Photo-friendly definition: soft line + subtle ring
+  const definition = "border border-line/10 ring-1 ring-line/10";
 
-  // Top sheen, but lighter + less “template”
+  // Gentle top sheen (keeps it premium on bright photos)
   const topSheen =
     "before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl " +
-    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.50),transparent_58%)] " +
-    "before:opacity-55";
+    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.70),transparent_60%)] " +
+    "before:opacity-60";
 
-  // A gentle vignette to calm borders + reduce harsh contrast around edges
-  const vignette =
+  // Edge quieting (NOT a dark vignette — just calms outlines)
+  const edgeSoftener =
     "after:pointer-events-none after:absolute after:inset-0 after:rounded-3xl " +
-    "after:bg-[radial-gradient(1200px_700px_at_50%_25%,transparent_55%,rgba(0,0,0,0.06)_100%)] " +
+    "after:bg-[radial-gradient(1200px_700px_at_50%_15%,rgba(255,255,255,0.65)_0%,transparent_55%,rgba(0,0,0,0.035)_100%)] " +
     "after:opacity-70";
 
   const variants = {
     surface: clsx(
       definition,
       topSheen,
-      vignette,
-      "bg-[linear-gradient(to_bottom,rgba(255,250,242,0.82),rgba(250,242,232,0.72))]",
+      edgeSoftener,
+      // clean glassy white (works over photo)
+      "bg-white/72 backdrop-blur-md",
       "shadow-soft"
     ),
 
     elevated: clsx(
-      // slightly stronger definition so it reads “hero container”
-      "border border-black/6 ring-1 ring-black/6",
+      "border border-line/12 ring-1 ring-line/12",
       topSheen,
-      vignette,
-      "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.86),rgba(251,244,234,0.76))]",
+      edgeSoftener,
+      "bg-white/78 backdrop-blur-md",
       "shadow-medium",
-
-      // Hover: less “lift”, more “clarity + depth”
-      "hover:shadow-large",
-      "hover:border-black/8 hover:ring-black/8",
-      "hover:bg-[linear-gradient(to_bottom,rgba(255,252,246,0.90),rgba(252,246,238,0.80))]"
+      "hover:shadow-large hover:-translate-y-[1px]",
+      "hover:border-line/18 hover:ring-line/18",
+      "active:translate-y-0"
     ),
 
     ghost: "bg-transparent border-transparent ring-0 shadow-none",
@@ -84,11 +81,7 @@ export function Card({
       (typeof props.id === "string" ? props.id : "") ||
       (typeof className === "string" ? className : "");
 
-    const sum = Array.from(String(seed)).reduce(
-      (acc, ch) => acc + ch.charCodeAt(0),
-      0
-    );
-
+    const sum = Array.from(String(seed)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
     const corners = ["tr", "tl", "br", "bl"] as const;
     return corners[sum % corners.length];
   }, [cornerAccent, accentSeed, props, className]);
@@ -103,16 +96,15 @@ export function Card({
         className
       )}
     >
-      {/* micro corner accent — subtle, organic, not always same spot */}
+      {/* micro corner accent — moved to brand (sky/meadow), not warm brown */}
       {corner !== "none" && variant !== "ghost" && (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2.5 w-2.5 rounded-full",
-            "opacity-45",
-            "bg-[radial-gradient(circle,rgba(208,140,96,0.22),transparent_66%)]",
-
-            // placement
+            "opacity-60",
+            // small “alive” sparkle: meadow->sky, very subtle
+            "bg-[radial-gradient(circle,rgba(63,161,126,0.22),rgba(79,156,255,0.12),transparent_70%)]",
             corner === "tr" && "right-1.5 top-1.5",
             corner === "tl" && "left-1.5 top-1.5",
             corner === "br" && "right-1.5 bottom-1.5",

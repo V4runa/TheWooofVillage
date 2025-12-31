@@ -10,7 +10,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   /**
-   * Tiny boutique detail. Default "auto" (deterministic by label/text).
+   * Tiny detail. Default "auto" (deterministic by label/text).
    * Set "none" to disable.
    */
   cornerAccent?: "auto" | "none" | "tl" | "tr" | "bl" | "br";
@@ -26,10 +26,10 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "group relative inline-flex items-center justify-center rounded-2xl font-semibold " +
-    "overflow-hidden " +
+    "group relative inline-flex items-center justify-center rounded-2xl font-extrabold " +
+    "overflow-hidden select-none " +
     "transition-[transform,box-shadow,background-color,border-color,opacity,filter] duration-200 ease-out " +
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10 " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10 " +
     "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed";
 
   const sizes = clsx(
@@ -38,7 +38,6 @@ export function Button({
     size === "lg" && "h-12 px-8 text-lg"
   );
 
-  // Deterministic corner so it feels organic but not random/flickery.
   const corner = React.useMemo(() => {
     if (cornerAccent === "none") return "none";
     if (cornerAccent !== "auto") return cornerAccent;
@@ -48,57 +47,54 @@ export function Button({
       (typeof props["aria-label"] === "string" ? props["aria-label"] : "") ||
       (typeof props.title === "string" ? props.title : "");
 
-    const sum = Array.from(String(label)).reduce(
-      (acc, ch) => acc + ch.charCodeAt(0),
-      0
-    );
-
+    const sum = Array.from(String(label)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
     const corners = ["tr", "tl", "br", "bl"] as const;
     return corners[sum % corners.length];
   }, [cornerAccent, children, props["aria-label"], props.title]);
 
+  // Light sheen overlay to make it feel “finished”
   const sheen =
     "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl " +
-    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.35),transparent_60%)] " +
-    "before:opacity-60";
+    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.35),transparent_62%)] " +
+    "before:opacity-70";
 
   const variants = {
     primary: clsx(
-      "text-[#f6f1ea]",
-      "bg-[linear-gradient(to_right,#2f2a26,#3a3430)]",
-      "shadow-medium",
+      // IMPORTANT: high-contrast text so “Text” never disappears
+      "text-white",
+
+      // lively brand gradient (meadow + sky + sun hint)
+      "bg-[linear-gradient(90deg,rgba(63,161,126,1)_0%,rgba(79,156,255,0.95)_55%,rgba(255,141,74,0.95)_115%)]",
+
+      // definition + depth
+      "shadow-medium ring-1 ring-white/20",
       sheen,
 
-      // subtle inner edge so it feels “made”, not flat
-      "ring-1 ring-white/8",
-      "hover:ring-white/10",
-
-      "hover:shadow-large hover:-translate-y-[1px] hover:brightness-[1.06]",
+      // hover: glow + clarity
+      "hover:shadow-large hover:-translate-y-[1px]",
+      "hover:saturate-[1.08] hover:brightness-[1.03]",
       "active:translate-y-0 active:brightness-100"
     ),
 
     secondary: clsx(
-      "border border-black/5 ring-1 ring-black/5",
+      // photo-friendly “soft surface” button
       "text-ink-primary",
-      "bg-[linear-gradient(to_bottom,rgba(255,252,246,0.78),rgba(250,242,232,0.62))]",
-      "backdrop-blur-md",
+      "bg-white/80 backdrop-blur-md",
+      "border border-line/12 ring-1 ring-line/10",
       "shadow-soft",
       sheen,
 
       "hover:shadow-medium hover:-translate-y-[1px]",
-      "hover:border-black/8 hover:ring-black/8",
-      "hover:bg-[linear-gradient(to_bottom,rgba(255,252,246,0.86),rgba(252,246,238,0.72))]",
+      "hover:border-line/18 hover:ring-line/18",
       "active:translate-y-0 active:shadow-soft"
     ),
 
     ghost: clsx(
-      "border border-transparent ring-0",
-      "bg-transparent",
       "text-ink-primary",
-      "hover:bg-white/18",
-      "hover:border-black/5 hover:ring-1 hover:ring-black/5",
-      "active:bg-white/14",
-      "shadow-none"
+      "bg-transparent",
+      "border border-transparent ring-0 shadow-none",
+      "hover:bg-white/22 hover:border-line/12 hover:ring-1 hover:ring-line/10",
+      "active:bg-white/18"
     ),
   } as const;
 
@@ -108,15 +104,14 @@ export function Button({
       disabled={disabled}
       className={clsx(base, sizes, variants[variant], className)}
     >
-      {/* tiny corner detail (subtle + organic, not always same spot) */}
+      {/* tiny corner detail — brand-tinted (no brown) */}
       {corner !== "none" && (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2 w-2 rounded-full",
-            "opacity-55 transition-opacity duration-200 group-hover:opacity-75",
-            // warm boutique accent; stays quiet on primary too
-            "bg-[radial-gradient(circle,rgba(208,140,96,0.26),transparent_65%)]",
+            "opacity-65 transition-opacity duration-200 group-hover:opacity-85",
+            "bg-[radial-gradient(circle,rgba(255,255,255,0.70),rgba(255,255,255,0.00)_70%)]",
             corner === "tr" && "right-1 top-1",
             corner === "tl" && "left-1 top-1",
             corner === "br" && "right-1 bottom-1",
@@ -125,8 +120,7 @@ export function Button({
         />
       )}
 
-      {/* content */}
-      <span className="relative inline-flex items-center justify-center">
+      <span className="relative inline-flex items-center justify-center gap-2">
         {children}
       </span>
     </button>

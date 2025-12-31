@@ -22,11 +22,14 @@ export function useMerchantProfile(): UseMerchantProfileResult {
       setLoading(true);
       setError(null);
 
+      // Single-tenant: grab the latest profile row, don't assume a magic id.
       const { data, error } = await supabase
         .from("merchant_profile")
         .select("*")
-        .eq("id", 1)
-        .single();
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (!alive) return;
 
@@ -36,7 +39,7 @@ export function useMerchantProfile(): UseMerchantProfileResult {
         return;
       }
 
-      setProfile(data as MerchantProfile);
+      setProfile((data as MerchantProfile) ?? null);
       setLoading(false);
     }
 

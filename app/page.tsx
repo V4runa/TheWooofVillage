@@ -1,91 +1,73 @@
-import { Container } from "@/components/ui/Container";
-import { Card } from "@/components/ui/Card";
+"use client";
 
+import { Container } from "@/components/ui/Container";
 import { LandingHeader } from "@/components/landing/LandingHeader";
-import { HeroExperience } from "@/components/landing/HeroExperience";
-import { PupFeedPreview } from "@/components/landing/PupFeedPreview";
-import { TrustStrip } from "@/components/landing/TrustStrip";
-import { HowItWorks } from "@/components/landing/HowItWorks";
+import { PuppiesHero } from "@/components/landing/PuppiesHero";
+import { DogsCarouselHero } from "@/components/dogs/DogsCarouselHero";
+import { DogsGrid } from "@/components/dogs/DogsGrid";
+import { TestimonialsSection } from "@/components/testimonials/TestimonialsSection";
+
+import { useDogs } from "@/hooks/useDogs";
+import { getMockFeaturedDogs } from "@/components/dogs/MockDogs";
+
+type HeroMode = "cards" | "carousel";
 
 export default function Home() {
+  const { dogs, loading, error } = useDogs({ statuses: ["available"] });
+
+  const HERO_MODE: HeroMode = "cards";
+
+  const hasRealDogs = (dogs?.length ?? 0) > 0;
+
+  const heroDogs = hasRealDogs ? dogs.slice(0, 3) : getMockFeaturedDogs(3);
+  const gridDogs = hasRealDogs ? dogs : getMockFeaturedDogs(6);
+
   return (
     <main className="min-h-screen">
-      <Container size="xl" className="py-10 sm:py-14 lg:py-20">
-        <Card
-          variant="elevated"
-          className={[
-            "relative overflow-hidden rounded-[34px]",
-            "shadow-large",
-            "animate-fade-in",
-            // subtle inner definition without harsh borders
-            "ring-1 ring-black/5",
-          ].join(" ")}
-        >
-          {/* Internal atmosphere: warm-tinted, not off-white */}
-          <div className="pointer-events-none absolute inset-0">
-            {/* Warm canvas wash (kills the off-white problem without turning muddy) */}
-            <div className="absolute inset-0 bg-[radial-gradient(1200px_600px_at_20%_0%,rgba(255,247,237,0.55),transparent_60%),radial-gradient(900px_500px_at_90%_20%,rgba(255,237,213,0.38),transparent_55%),linear-gradient(to_bottom,rgba(255,255,255,0.12),rgba(255,255,255,0.06))]" />
+      {/* ✅ Header first (sticky nav + reserve panel) */}
+      <LandingHeader pupsAnchorId="pups" />
 
-            {/* Gentle glows: keep them, but tone down saturation */}
-            <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-primary/12 blur-3xl animate-gentle-pulse" />
-            <div
-              className="absolute -bottom-44 -left-40 h-[520px] w-[520px] rounded-full bg-secondary/10 blur-3xl"
-              style={{ animationDelay: "1s" }}
-            />
+      <Container size="xl" className="pb-10 sm:pb-12 lg:pb-14">
+        {/* ✅ Featured pups AFTER header */}
+        <section className="mt-8 sm:mt-10 animate-fade-in">
+          {HERO_MODE === "cards" ? (
+            <PuppiesHero dogs={heroDogs} />
+          ) : (
+            <DogsCarouselHero dogs={gridDogs} />
+          )}
+        </section>
 
-            {/* Soft vignette to calm edges and reduce harsh contrast */}
-            <div className="absolute inset-0 bg-[radial-gradient(1400px_800px_at_50%_30%,transparent_55%,rgba(0,0,0,0.05)_100%)]" />
+        {/* Puppies grid */}
+        <section id="pups" className="mt-10 sm:mt-12 lg:mt-14">
+          <div className="mb-5 sm:mb-7">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-primary">
+              Puppies available now
+            </h1>
+            <p className="mt-2 max-w-[70ch] text-sm sm:text-base leading-relaxed text-ink-secondary">
+              Tap a puppy for photos, details, and deposit options.
+              {!hasRealDogs && " (Showing preview pups until listings are added.)"}
+            </p>
           </div>
 
-          <div className="relative p-6 sm:p-10 lg:p-14">
-            {/* Chapter 1: Header */}
-            <section className="relative">
-              <LandingHeader />
-            </section>
-
-            {/* Chapter 2: Hero */}
-            <section className="relative mt-10 sm:mt-12 lg:mt-14">
-              <HeroExperience />
-            </section>
-
-            {/* Chapter seam (slightly tighter + cleaner rhythm) */}
-            <div className="my-9 sm:my-11 lg:my-12 h-px bg-[linear-gradient(to_right,transparent,rgba(0,0,0,0.08),transparent)]" />
-
-            {/* Chapter 3: Feed + Trust */}
-            <section
-              className={[
-                "relative grid gap-8 lg:gap-10 lg:grid-cols-12 lg:items-stretch",
-                // tiny optical align so the two columns feel “centered” together
-                "lg:pt-1",
-              ].join(" ")}
-            >
-              <div className="lg:col-span-7">
-                <PupFeedPreview />
+          {error ? (
+            <div className="rounded-2xl bg-surface-light p-4 sm:p-5 border border-line/10 shadow-soft">
+              <div className="text-sm font-semibold text-ink-primary">
+                Couldn’t load puppies right now.
               </div>
+              <div className="mt-1 text-sm text-ink-secondary">Please refresh.</div>
+              <div className="mt-2 text-xs opacity-70">{error}</div>
+            </div>
+          ) : (
+            <DogsGrid dogs={gridDogs} loading={loading} count={6} />
+          )}
+        </section>
 
-              {/* Keep the trust column feeling intentional + aligned */}
-              <div className="lg:col-span-5 lg:flex">
-                <div className="lg:sticky lg:top-8 lg:flex lg:w-full">
-                  {/* micro “frame” so the pillar doesn’t look like it floats differently than the feed */}
-                  <div className="w-full lg:pt-[2px]">
-                    <TrustStrip />
-                  </div>
-                </div>
-              </div>
-            </section>
+        {/* Testimonials */}
+        <section className="mt-12 sm:mt-14 lg:mt-16">
+          <TestimonialsSection />
+        </section>
 
-            {/* Chapter seam */}
-            <div className="my-9 sm:my-11 lg:my-12 h-px bg-[linear-gradient(to_right,transparent,rgba(0,0,0,0.08),transparent)]" />
-
-            {/* Chapter 4: How it works */}
-            <section className="relative">
-              <HowItWorks />
-            </section>
-
-            {/* Bottom breathing room so the rounded card doesn't feel cramped */}
-            <div className="mt-10 sm:mt-12 lg:mt-14" />
-          </div>
-        </Card>
+        <div className="mt-8 sm:mt-10 lg:mt-12" />
       </Container>
     </main>
   );

@@ -1,0 +1,103 @@
+// lib/mockDogs.ts
+import type { Dog } from "@/types/dogs";
+
+/**
+ * Landing-page mock dogs for when there are no listings yet.
+ * Always includes cover_image_url to avoid “broken grid” visuals.
+ */
+export const MOCK_DOGS: Dog[] = [
+  {
+    id: "mock-1",
+    slug: "milo",
+    name: "Milo",
+    breed: "Golden Retriever",
+    age_weeks: 10,
+    sex: "Male",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=101",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 120000,
+    description: "Playful and confident. Loves cuddles and learns fast.",
+    sort_order: 1,
+    images: [],
+  } as any,
+  {
+    id: "mock-2",
+    slug: "luna",
+    name: "Luna",
+    breed: "Labrador Mix",
+    age_weeks: 12,
+    sex: "Female",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=202",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 110000,
+    description: "Sweet temperament. Great with kids and calm indoors.",
+    sort_order: 2,
+    images: [],
+  } as any,
+  {
+    id: "mock-3",
+    slug: "nova",
+    name: "Nova",
+    breed: "Aussie Shepherd",
+    age_weeks: 14,
+    sex: "Female",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=50",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 110000,
+    description: "Gentle energy, affectionate, already doing great on leash.",
+    sort_order: 3,
+    images: [],
+  } as any,
+  {
+    id: "mock-4",
+    slug: "bear",
+    name: "Bear",
+    breed: "Bernedoodle",
+    age_weeks: 11,
+    sex: "Male",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=40",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 130000,
+    description: "Fluffy and social. Loves people and bonds quickly.",
+    sort_order: 4,
+    images: [],
+  } as any,
+  {
+    id: "mock-5",
+    slug: "atlas",
+    name: "Atlas",
+    breed: "German Shepherd",
+    age_weeks: 13,
+    sex: "Male",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=52",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 140000,
+    description: "Smart and steady. Thrives with structure and daily play.",
+    sort_order: 5,
+    images: [],
+  } as any,
+  {
+    id: "mock-6",
+    slug: "daisy",
+    name: "Daisy",
+    breed: "Cavalier Spaniel",
+    age_weeks: 9,
+    sex: "Female",
+    status: "available",
+    cover_image_url: "https://placedog.net/1000/700?id=11",
+    deposit_amount_cents: 20000,
+    price_amount_cents: 115000,
+    description: "Tiny sweetheart. Great lap companion with a playful streak.",
+    sort_order: 6,
+    images: [],
+  } as any,
+];
+
+export function getMockFeaturedDogs(count: 3 | 6) {
+  return MOCK_DOGS.slice(0, count);
+}

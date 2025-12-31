@@ -5,17 +5,15 @@ const config: Config = {
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./hooks/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+    "./types/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
       colors: {
         /**
          * Semantic tokens (source of truth in globals.css :root)
-         * Usage examples:
-         * - text-ink-primary
-         * - text-text-muted
-         * - bg-surface
-         * - border-black/5 still works for “linework”
+         * Keep these stable so components can evolve without rewrites.
          */
         ink: {
           primary: "rgb(var(--ink-primary) / <alpha-value>)",
@@ -23,6 +21,7 @@ const config: Config = {
           muted: "rgb(var(--text-muted) / <alpha-value>)",
         },
 
+        // Backwards compatibility (prefer ink.* going forward)
         text: {
           primary: "rgb(var(--ink-primary) / <alpha-value>)",
           secondary: "rgb(var(--ink-secondary) / <alpha-value>)",
@@ -35,56 +34,77 @@ const config: Config = {
           muted: "rgb(var(--surface-0) / <alpha-value>)",
         },
 
+        line: "rgb(var(--line) / <alpha-value>)",
+
+        /**
+         * Brand accents: ONLY token-driven.
+         * No more baked-in sage/terracotta ramps that keep us “stuck”.
+         */
         primary: {
           DEFAULT: "rgb(var(--primary) / <alpha-value>)",
-          50: "#f0f7f5",
-          100: "#d9ebe6",
-          200: "#b7d7cd",
-          300: "#7FAF9B",
-          400: "#5a9a85",
-          500: "#3d7f6a",
-          600: "#2d6655",
-          700: "#265347",
-          800: "#22433a",
-          900: "#1f3831",
         },
-
         secondary: {
           DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
-          50: "#faf6f2",
-          100: "#f4e9de",
-          200: "#e8d1bd",
-          300: "#D08C60",
-          400: "#c2744a",
-          500: "#b55a3a",
-          600: "#a74a2f",
-          700: "#8b3c29",
-          800: "#703228",
-          900: "#5b2b24",
         },
 
         /**
-         * Optional: keep “cream” as a palette for one-off utilities,
-         * but avoid using it for core primitives (use surface tokens instead).
+         * Optional utility palettes for authored, non-template accents.
+         * (Use sparingly. These are NOT the “theme”, just tools.)
          */
-        cream: {
-          50: "#fbf7f1",
-          100: "#f4eee6",
-          200: "#ebe2d6",
-          300: "#dfd2c2",
+        sky: {
+          50: "#f2f8ff",
+          100: "#e7f2ff",
+          200: "#cfe6ff",
+          300: "#a9d3ff",
+          400: "#7fbaff",
+          500: "#4f9cff",
+          600: "#2c79e6",
+          700: "#1f5fb8",
+          800: "#1b4f93",
+          900: "#173f72",
+        },
+
+        meadow: {
+          50: "#f1fbf4",
+          100: "#dcf7e5",
+          200: "#b8eec9",
+          300: "#86dfa5",
+          400: "#4fcb7a",
+          500: "#2fb35f",
+          600: "#228d4a",
+          700: "#1e6f3d",
+          800: "#1b5834",
+          900: "#16472b",
+        },
+
+        sun: {
+          50: "#fff6e8",
+          100: "#ffedd1",
+          200: "#ffd8a3",
+          300: "#ffc071",
+          400: "#ffa24a",
+          500: "#ff7f2a",
+          600: "#e65f14",
+          700: "#b84512",
+          800: "#923716",
+          900: "#772f15",
         },
       },
 
+      /**
+       * Shadows: shift away from brown “cafe UI”
+       * toward soft navy/ink shadows that feel airy.
+       */
       boxShadow: {
-        soft: "0 2px 8px rgba(40, 35, 30, 0.08)",
-        medium: "0 6px 16px rgba(40, 35, 30, 0.12)",
-        large: "0 12px 32px rgba(40, 35, 30, 0.16)",
-        ambient: "0 3px 10px rgba(40, 35, 30, 0.08)",
-        glow: "0 0 20px rgba(127, 175, 155, 0.12)",
+        soft: "0 2px 10px rgba(24, 33, 46, 0.08)",
+        medium: "0 10px 24px rgba(24, 33, 46, 0.12)",
+        large: "0 18px 44px rgba(24, 33, 46, 0.16)",
+        ambient: "0 4px 14px rgba(24, 33, 46, 0.10)",
+        glow: "0 0 28px rgba(79, 168, 143, 0.18)",
       },
 
       animation: {
-        "fade-in": "fadeIn 0.5s ease-out",
+        "fade-in": "fadeIn 0.45s ease-out",
         "gentle-pulse": "gentle-pulse 3s ease-in-out infinite",
       },
     },

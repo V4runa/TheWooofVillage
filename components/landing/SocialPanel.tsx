@@ -7,7 +7,13 @@ import { Card } from "@/components/ui/Card";
 import { ActionChip, IconDot } from "@/components/landing/ActionChip";
 import type { MerchantProfile } from "@/types/merchant";
 
-export function SocialPanel({ profile }: { profile: MerchantProfile | null }) {
+export function SocialPanel({
+  profile,
+  compact = false,
+}: {
+  profile: MerchantProfile | null;
+  compact?: boolean;
+}) {
   const socials = useMemo(() => {
     return [
       profile?.instagram_url
@@ -33,9 +39,9 @@ export function SocialPanel({ profile }: { profile: MerchantProfile | null }) {
   return (
     <Card
       variant="elevated"
-      className="rounded-3xl bg-surface-light/75 backdrop-blur-md ring-1 ring-line/10 border border-black/5 shadow-medium"
+      className="rounded-3xl bg-surface-light/80 backdrop-blur-sm ring-1 ring-line/12 border border-black/5 shadow-medium"
     >
-      <div className="p-4 sm:p-5">
+      <div className={compact ? "p-4" : "p-4 sm:p-5"}>
         <div className="text-xs font-black uppercase tracking-wider text-ink-muted">
           Social
         </div>

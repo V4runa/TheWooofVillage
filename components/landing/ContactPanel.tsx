@@ -17,9 +17,11 @@ async function copyToClipboard(text: string) {
 export function ContactPanel({
   phone,
   onToast,
+  compact = false,
 }: {
   phone: string | null;
   onToast: (msg: string) => void;
+  compact?: boolean;
 }) {
   const telHref = phone ? `tel:${phone}` : undefined;
   const smsHref = phone ? `sms:${phone}` : undefined;
@@ -27,17 +29,23 @@ export function ContactPanel({
   return (
     <Card
       variant="elevated"
-      className="rounded-3xl bg-surface-light/75 backdrop-blur-md ring-1 ring-line/10 border border-black/5 shadow-medium"
+      className={[
+        "bg-surface-light/80 backdrop-blur-sm ring-1 ring-line/12 border border-black/5 shadow-medium",
+        compact ? "rounded-3xl" : "rounded-3xl",
+      ].join(" ")}
     >
-      <div className="p-4 sm:p-5">
+      <div className={compact ? "p-4" : "p-4 sm:p-5"}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-black uppercase tracking-wider text-ink-muted">
               Contact
             </div>
-            <div className="mt-1 text-sm text-ink-secondary">
+
+            {/* Contrast fix: primary/90 instead of secondary */}
+            <div className="mt-1 text-[15px] leading-snug text-ink-primary/90">
               Text is fastest. Call if needed.
             </div>
+
             {phone ? (
               <div className="mt-2 text-sm font-extrabold text-ink-primary">
                 {phone}
@@ -51,17 +59,15 @@ export function ContactPanel({
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {/* Text */}
           <a href={smsHref} className={!phone ? "pointer-events-none opacity-50" : ""}>
-            <Button className="w-full gap-2">
+            <Button className="w-full gap-2" size="sm">
               <MessageCircle size={18} />
               Text
             </Button>
           </a>
 
-          {/* Call */}
           <a href={telHref} className={!phone ? "pointer-events-none opacity-50" : ""}>
-            <Button variant="secondary" className="w-full gap-2">
+            <Button variant="secondary" className="w-full gap-2" size="sm">
               <Phone size={18} />
               Call
             </Button>
@@ -73,6 +79,7 @@ export function ContactPanel({
             <Button
               variant="ghost"
               className="gap-2"
+              size="sm"
               onClick={async () => {
                 const ok = await copyToClipboard(phone);
                 onToast(ok ? "Phone number copied." : "Couldn’t copy.");

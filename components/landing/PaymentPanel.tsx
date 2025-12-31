@@ -21,9 +21,11 @@ async function copyToClipboard(text: string) {
 export function PaymentPanel({
   profile,
   onToast,
+  compact = false,
 }: {
   profile: MerchantProfile | null;
   onToast: (msg: string) => void;
+  compact?: boolean;
 }) {
   const paymentLinks = useMemo(() => {
     return [
@@ -48,15 +50,17 @@ export function PaymentPanel({
   return (
     <Card
       variant="elevated"
-      className="rounded-3xl bg-surface-light/75 backdrop-blur-md ring-1 ring-line/10 border border-black/5 shadow-medium"
+      className="rounded-3xl bg-surface-light/80 backdrop-blur-sm ring-1 ring-line/12 border border-black/5 shadow-medium"
     >
-      <div className="p-4 sm:p-5">
+      <div className={compact ? "p-4" : "p-4 sm:p-5"}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-black uppercase tracking-wider text-ink-muted">
               Deposit & Payment
             </div>
-            <p className="mt-1 text-sm text-ink-secondary">
+
+            {/* Contrast fix */}
+            <p className="mt-1 text-[15px] leading-snug text-ink-primary/90">
               Pay deposit to reserve. Then{" "}
               <span className="font-extrabold text-ink-primary">text/call</span>{" "}
               to confirm.

@@ -1,4 +1,3 @@
-// components/dogs/DogTile.tsx
 "use client";
 
 import Link from "next/link";
@@ -35,7 +34,6 @@ function statusLabel(status: string) {
 }
 
 function statusVariant(status: string) {
-  // maps to your Badge variants, keeping it calm
   if (status === "available") return "success";
   if (status === "reserved") return "warning";
   if (status === "sold") return "neutral";
@@ -44,7 +42,7 @@ function statusVariant(status: string) {
 
 type Props = {
   dog: Dog;
-  dense?: boolean; // landing page uses dense tiles
+  dense?: boolean;
 };
 
 export function DogTile({ dog, dense = true }: Props) {
@@ -57,11 +55,11 @@ export function DogTile({ dog, dense = true }: Props) {
   return (
     <Link href={href} className="block">
       <Card
-        variant="elevated"
+        variant="surface"
         className={[
           "group overflow-hidden",
-          "transition-transform duration-300 ease-out",
-          "hover:-translate-y-[1px]",
+          "hover:-translate-y-[1px] hover:shadow-medium",
+          "transition",
         ].join(" ")}
       >
         {/* Image */}
@@ -85,10 +83,6 @@ export function DogTile({ dog, dense = true }: Props) {
             </div>
           )}
 
-          {/* soft readability */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.25),transparent_60%)]" />
-
-          {/* Status */}
           <div className="absolute left-3 top-3">
             <Badge variant={statusVariant(dog.status) as any}>
               {statusLabel(dog.status)}
@@ -108,25 +102,21 @@ export function DogTile({ dog, dense = true }: Props) {
             ) : null}
           </div>
 
-          {/* Description: keep it tight (landing should be calm) */}
+          {/* keep it calm */}
           <p className="mt-2 line-clamp-1 text-sm text-ink-secondary">
             {dog.description || "Tap for photos, details, and deposit options."}
           </p>
 
-          {(deposit || price) && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {deposit && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-ink-primary ring-1 ring-black/10">
-                  Deposit {deposit}
-                </span>
-              )}
-              {price && (
-                <span className="inline-flex items-center rounded-full bg-secondary/10 px-3 py-1 text-[11px] font-semibold text-ink-primary ring-1 ring-black/10">
-                  Total {price}
-                </span>
-              )}
+          {(deposit || price) ? (
+            <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+              <span className="font-bold text-ink-secondary">
+                {deposit ? `Deposit ${deposit}` : ""}
+              </span>
+              <span className="font-extrabold text-ink-primary">
+                {price ? `Total ${price}` : ""}
+              </span>
             </div>
-          )}
+          ) : null}
 
           <div className="mt-3 text-xs font-semibold text-ink-primary">
             View details →

@@ -21,26 +21,23 @@ body {
 }
 
 /* ---------------------------------------------
-   Background system (photo + blur + atmosphere)
+   Background system (photo + atmosphere)
 --------------------------------------------- */
 body {
   position: relative;
   isolation: isolate;
 
-  /* PHOTO BACKGROUND (base layer) */
   background-image: url("/bg/woofvillage.png");
   background-position: center top;
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
 
-  /* fallback color while image loads */
   background-color: rgb(235 245 255);
 
-  /* slight pop without fog */
-  filter: saturate(1.06) contrast(1.03);
+  /* Less “fog”, more pop */
+  filter: saturate(1.1) contrast(1.07);
 
-  /* Text defaults */
   color: rgb(var(--ink-primary));
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
@@ -49,8 +46,7 @@ body {
 }
 
 /**
- * Layer 1 (behind content): micro-blur + subtle tone control
- * IMPORTANT: This is the ONLY ::before.
+ * Layer 1: micro-blur + tiny tone veil
  */
 body::before {
   content: "";
@@ -59,17 +55,15 @@ body::before {
   pointer-events: none;
   z-index: -1;
 
-  /* micro blur: keep it subtle */
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* was 6px (too foggy) */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 
-  /* tiny tone veil (NOT milky) */
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(255, 255, 255, 0.005);
 }
 
 /**
- * Layer 2 (behind content): vibrancy + focus vignette
- * IMPORTANT: This is the ONLY ::after.
+ * Layer 2: vibrancy blooms + gentle vignette
  */
 body::after {
   content: "";
@@ -79,29 +73,21 @@ body::after {
   z-index: -1;
 
   background:
-    /* vibrancy + warmth blooms */
     radial-gradient(
       1200px 720px at 18% 10%,
-      rgba(var(--tint-sky), 0.40),
+      rgba(var(--tint-sky), 0.26),
       transparent 62%
     ),
     radial-gradient(
       1000px 680px at 82% 22%,
-      rgba(var(--tint-warm), 0.34),
+      rgba(var(--tint-warm), 0.22),
       transparent 60%
     ),
-    /* gentle focus vignette (keeps readability) */
     radial-gradient(
       1400px 900px at 50% 18%,
-      rgba(0, 0, 0, 0.02) 0%,
+      rgba(0, 0, 0, 0.01) 0%,
       transparent 55%,
-      rgba(0, 0, 0, 0.10) 100%
-    ),
-    /* subtle top shade so headers read clean */
-    linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.10) 0%,
-      rgba(255, 255, 255, 0.00) 46%
+      rgba(0, 0, 0, 0.08) 100%
     );
 }
 
@@ -119,8 +105,10 @@ h6 {
   color: rgb(var(--ink-primary));
 }
 
+/* IMPORTANT: remove global paragraph fade.
+   Components should set text-ink-secondary where needed. */
 p {
-  color: rgb(var(--ink-secondary));
+  color: inherit;
 }
 
 /* ---------------------------------------------

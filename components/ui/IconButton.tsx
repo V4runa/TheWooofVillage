@@ -37,84 +37,93 @@ export function IconButton({
     return corners[sum % corners.length];
   }, [cornerAccent, label]);
 
+  const base = clsx(
+    // silhouette (make it read like a “control”, not a badge)
+    "group relative inline-flex items-center justify-center",
+    "rounded-xl", // IMPORTANT: less pill-like than 2xl
+    // icon tone (warm theme)
+    "text-amber-900/75 hover:text-amber-950",
+    // motion
+    "transition-[transform,box-shadow,background-color,border-color,opacity,color] duration-200 ease-out",
+    // focus
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(255,252,248,0.22)]",
+    // disabled
+    "disabled:opacity-45 disabled:pointer-events-none disabled:cursor-not-allowed"
+  );
+
+  const sizing = clsx(size === "sm" && "h-10 w-10", size === "md" && "h-12 w-12");
+
+  const soft = clsx(
+    /**
+     * Soft = main icon control
+     * - clear plate
+     * - clear elevation
+     * - clear press
+     */
+    "bg-[rgba(255,240,225,0.72)]",
+    "border border-amber-950/20",
+    "ring-1 ring-inset ring-white/14",
+    "shadow-[0_14px_34px_-20px_rgba(17,24,39,0.46)]",
+    "hover:-translate-y-[1px]",
+    "hover:bg-[rgba(255,240,225,0.82)] hover:border-amber-950/28",
+    "hover:shadow-[0_22px_52px_-26px_rgba(17,24,39,0.56)]",
+    // press feels like a control: no “float”, it settles in
+    "active:translate-y-[1px]",
+    "active:bg-[rgba(255,240,225,0.70)]",
+    "active:shadow-[0_10px_24px_-18px_rgba(17,24,39,0.32)]"
+  );
+
+  const ghost = clsx(
+    /**
+     * Ghost = minimal icon control
+     * - NO border at rest (avoid badge confusion)
+     * - hover shows plate + outline
+     */
+    "bg-transparent",
+    "border border-transparent",
+    "shadow-none",
+    "hover:-translate-y-[1px]",
+    "hover:bg-[rgba(255,240,225,0.28)]",
+    "hover:border-amber-950/18",
+    "hover:shadow-[0_14px_34px_-22px_rgba(17,24,39,0.26)]",
+    "active:translate-y-[1px]",
+    "active:bg-[rgba(255,240,225,0.22)]"
+  );
+
   return (
     <button
       {...props}
       type={props.type ?? "button"}
       aria-label={label}
       title={label}
-      className={clsx(
-        // layout
-        "group relative inline-flex items-center justify-center rounded-2xl",
-        // icon tone control (prevents harsh contrast)
-        "text-ink-muted hover:text-ink-secondary",
-        // motion
-        "transition-[transform,box-shadow,background-color,border-color,opacity,color,filter] duration-200 ease-out",
-        // focus
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10",
-        // disabled
-        "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
-
-        size === "sm" && "h-9 w-9",
-        size === "md" && "h-11 w-11",
-
-        variant === "soft" &&
-          [
-            // photo-friendly definition
-            "border border-line/10 ring-1 ring-line/10",
-            // clean glass surface
-            "bg-white/72 backdrop-blur-md",
-            "shadow-soft",
-
-            // hover: clarity + gentle lift
-            "hover:shadow-medium hover:-translate-y-[1px]",
-            "hover:border-line/16 hover:ring-line/14",
-            "hover:bg-white/78",
-            "hover:saturate-[1.03] hover:brightness-[1.01]",
-
-            // active: settle
-            "active:translate-y-0 active:shadow-soft",
-          ].join(" "),
-
-        variant === "ghost" &&
-          [
-            "border border-transparent ring-0",
-            "bg-transparent shadow-none",
-            // clean mist hover (not beige)
-            "hover:bg-white/22 hover:border-line/12 hover:ring-1 hover:ring-line/10",
-            "active:bg-white/18",
-          ].join(" "),
-
-        className
-      )}
+      className={clsx(base, sizing, variant === "soft" ? soft : ghost, className)}
     >
-      {/* subtle inner sheen so icons feel integrated */}
+      {/* control polish: subtle top highlight (helps it read as “button”) */}
       <span
         aria-hidden="true"
         className={clsx(
-          "pointer-events-none absolute inset-0 rounded-2xl",
-          "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_62%)]",
-          variant === "ghost" ? "opacity-18" : "opacity-42"
+          "pointer-events-none absolute inset-0 rounded-xl",
+          "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.42),transparent_70%)]",
+          variant === "ghost" ? "opacity-22" : "opacity-55"
         )}
       />
 
-      {/* organic corner sparkle — brand (no brown) */}
-      {corner !== "none" && (
+      {/* tiny corner detail (kept subtle so it doesn’t read “badge”) */}
+      {corner !== "none" ? (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2.5 w-2.5 rounded-full",
-            "opacity-65 group-hover:opacity-90 transition-opacity duration-200",
-            "bg-[radial-gradient(circle,rgba(255,255,255,0.75),rgba(79,156,255,0.20),rgba(63,161,126,0.14),transparent_72%)]",
+            "opacity-30 group-hover:opacity-45 transition-opacity duration-200",
+            "bg-[radial-gradient(circle,rgba(255,255,255,0.60),rgba(96,140,255,0.14),rgba(255,176,122,0.14),transparent_72%)]",
             corner === "tr" && "right-1.5 top-1.5",
             corner === "tl" && "left-1.5 top-1.5",
             corner === "br" && "right-1.5 bottom-1.5",
             corner === "bl" && "left-1.5 bottom-1.5"
           )}
         />
-      )}
+      ) : null}
 
-      {/* content */}
       <span className="relative inline-flex items-center justify-center">
         {children}
       </span>

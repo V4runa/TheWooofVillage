@@ -6,89 +6,116 @@
 html,
 body {
   height: 100%;
+  min-height: 100%;
 }
 
 /* ---------------------------------------------
-   Global tokens
+   Global tokens (bright + airy indoor warmth)
 --------------------------------------------- */
 :root {
-  --ink-primary: 20 28 40;
-  --ink-secondary: 56 72 96;
+  /* warm charcoal instead of pure black */
+  --ink-primary: 34 40 50;
+  --ink-secondary: 76 90 110;
 
-  /* warmth + brand */
-  --tint-warm: 255 244 226; /* warm cream */
-  --tint-sky: 210 232 255; /* airy sky */
+  /* indoor palette */
+  --tint-warm: 255 240 224; /* cream */
+  --tint-ember: 255 206 160; /* fire/lamplight */
+  --tint-air: 248 252 255; /* airy lift */
+  --tint-cool: 216 232 255; /* tiny cool counterbalance */
+
+  /* Background image hook */
+  --bg-image: url("/bg/woofvillage.png");
 }
 
 /* ---------------------------------------------
-   Background system (photo + atmosphere)
+   Root background + grading (NO backdrop-filter)
 --------------------------------------------- */
-body {
+html {
   position: relative;
   isolation: isolate;
 
-  background-image: url("/bg/woofvillage.png");
+  background-color: rgb(246 238 228);
+  background-image: var(--bg-image);
   background-position: center top;
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
 
-  background-color: rgb(235 245 255);
+  /* Keep it bright + airy indoors */
+  filter: brightness(1.06) saturate(1.03) contrast(1.03);
+}
 
-  /* Less “fog”, more pop */
-  filter: saturate(1.1) contrast(1.07);
+/**
+ * IMPORTANT:
+ * DO NOT use backdrop-filter here.
+ * It causes viewport-height seams in Chrome with fixed layers.
+ *
+ * Instead we use pure overlays that are guaranteed seamless.
+ */
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
 
+  /* airy, warm “film” that never seams */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 250, 244, 0.08) 42%,
+      rgba(255, 255, 255, 0.14) 100%
+    );
+}
+
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+
+  /* minimal, controlled ambiance */
+  background:
+    /* airy lift from top */
+    radial-gradient(
+      1200px 720px at 50% 6%,
+      rgba(var(--tint-air), 0.22),
+      transparent 60%
+    ),
+    /* ember warmth (subtle) */
+    radial-gradient(
+      950px 650px at 28% 62%,
+      rgba(var(--tint-ember), 0.14),
+      transparent 66%
+    ),
+    /* tiny cool counterbalance */
+    radial-gradient(
+      900px 620px at 86% 18%,
+      rgba(var(--tint-cool), 0.07),
+      transparent 62%
+    ),
+    /* ultra-light vignette (no dark edges) */
+    radial-gradient(
+      1600px 980px at 50% 28%,
+      rgba(0, 0, 0, 0.00) 0%,
+      transparent 62%,
+      rgba(0, 0, 0, 0.06) 100%
+    );
+}
+
+/* ---------------------------------------------
+   Body + defaults
+--------------------------------------------- */
+body {
+  position: relative;
+  background: transparent;
   color: rgb(var(--ink-primary));
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/**
- * Layer 1: micro-blur + tiny tone veil
- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-
-  /* was 6px (too foggy) */
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-
-  background: rgba(255, 255, 255, 0.005);
-}
-
-/**
- * Layer 2: vibrancy blooms + gentle vignette
- */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-
-  background:
-    radial-gradient(
-      1200px 720px at 18% 10%,
-      rgba(var(--tint-sky), 0.26),
-      transparent 62%
-    ),
-    radial-gradient(
-      1000px 680px at 82% 22%,
-      rgba(var(--tint-warm), 0.22),
-      transparent 60%
-    ),
-    radial-gradient(
-      1400px 900px at 50% 18%,
-      rgba(0, 0, 0, 0.01) 0%,
-      transparent 55%,
-      rgba(0, 0, 0, 0.08) 100%
-    );
 }
 
 /* ---------------------------------------------
@@ -105,22 +132,49 @@ h6 {
   color: rgb(var(--ink-primary));
 }
 
-/* IMPORTANT: remove global paragraph fade.
-   Components should set text-ink-secondary where needed. */
 p {
   color: inherit;
 }
+
+/* prevent harsh default link blue on warm bg */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------------------------------------------
+   On-photo readability (NO containers, NO dark plates)
+--------------------------------------------- */
+.on-photo {
+  /* Flip ink tokens locally so existing Tailwind classes still work */
+  --ink-primary: 255 248 242;   /* warm ivory */
+  --ink-secondary: 255 244 236; /* slightly softer ivory */
+}
+
+/* Subtle, premium readability without “outlined” text */
+.on-photo h1,
+.on-photo h2,
+.on-photo h3,
+.on-photo h4,
+.on-photo h5,
+.on-photo h6,
+.on-photo p {
+  text-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.22),
+    0 2px 10px rgba(0, 0, 0, 0.16);
+}
+
 
 /* ---------------------------------------------
    Selection + focus
 --------------------------------------------- */
 ::selection {
-  background: rgba(63, 161, 126, 0.22);
+  background: rgba(255, 200, 150, 0.26);
   color: rgb(var(--ink-primary));
 }
 
 *:focus-visible {
-  outline: 2px solid rgba(79, 156, 255, 0.45);
+  outline: 2px solid rgba(255, 190, 130, 0.55);
   outline-offset: 2px;
   border-radius: 10px;
 }

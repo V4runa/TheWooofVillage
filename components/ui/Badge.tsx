@@ -25,88 +25,105 @@ export function Badge({
 
     const text =
       typeof children === "string" ? children : (props["aria-label"] ?? "");
-    const sum = Array.from(String(text)).reduce(
-      (acc, ch) => acc + ch.charCodeAt(0),
-      0
-    );
+    const sum = Array.from(String(text)).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
     const corners = ["tr", "tl", "br", "bl"] as const;
     return corners[sum % corners.length];
   }, [cornerAccent, children, props]);
 
+  /**
+   * Badge visibility rules (esp. on photos):
+   * - stronger backplate (but still elegant)
+   * - crisp border + subtle outer contrast ring
+   * - tiny text halo for legibility on busy images
+   * - NO "lift" / translate (keeps it a label, not a control)
+   */
   const base =
-    "group relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold " +
-    "select-none " +
-    "transition-[box-shadow,background-color,border-color,opacity,transform] duration-200 ease-out";
+    "group relative inline-flex items-center rounded-full " +
+    "px-3 py-1.5 text-xs font-extrabold leading-none " +
+    "select-none whitespace-nowrap " +
+    "border " +
+    "ring-1 ring-inset ring-white/16 " +
+    "transition-[background-color,border-color,opacity] duration-200 ease-out";
 
-  // Photo-friendly definition (uses theme token line)
-  const definition = "border border-line/10 ring-1 ring-line/10";
-
-  // Micro sheen (keeps pills feeling “made”)
-  const sheen =
+  // Micro sheen: “made” feel
+  const microSheen =
     "before:pointer-events-none before:absolute before:inset-0 before:rounded-full " +
-    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent_70%)] " +
-    "before:opacity-55";
+    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.32),transparent_72%)] " +
+    "before:opacity-60";
+
+  // Photo legibility halo (NOT a control shadow)
+  const halo =
+    "shadow-[0_2px_10px_rgba(0,0,0,0.18)] " + // edge separation on photos
+    "[text-shadow:0_1px_0_rgba(255,255,255,0.18),0_0_10px_rgba(0,0,0,0.14)]";
+
+  // Outer contrast ring (helps on light fur + white highlights)
+  const contrastRing = "ring-1 ring-black/6";
 
   const variants = {
     neutral: clsx(
-      definition,
-      sheen,
-      "bg-white/70 backdrop-blur-md",
-      "text-ink-secondary",
-      "shadow-soft",
-      "hover:shadow-medium hover:border-line/16 hover:ring-line/14"
+      microSheen,
+      halo,
+      contrastRing,
+      // warmer + more opaque = readable everywhere
+      "bg-[rgba(255,248,240,0.86)]",
+      "border-amber-950/22",
+      "text-amber-950/82",
+      "hover:bg-[rgba(255,248,240,0.90)] hover:border-amber-950/26"
     ),
 
     primary: clsx(
-      // meadow + sky tint; still readable on photos
-      "border border-primary/18 ring-1 ring-primary/14",
-      sheen,
-      "bg-[linear-gradient(90deg,rgba(63,161,126,0.18)_0%,rgba(79,156,255,0.12)_70%,rgba(255,255,255,0.55)_115%)]",
-      "text-ink-primary",
-      "shadow-soft",
-      "hover:shadow-ambient hover:border-primary/26 hover:ring-primary/20"
+      microSheen,
+      halo,
+      contrastRing,
+      // meadow + sky tint, still bright enough for photos
+      "bg-[linear-gradient(90deg,rgba(63,161,126,0.28)_0%,rgba(96,140,255,0.16)_70%,rgba(255,248,240,0.86)_115%)]",
+      "border-emerald-800/26",
+      "text-amber-950/86",
+      "hover:border-emerald-800/30"
     ),
 
     secondary: clsx(
-      // sun tint
-      "border border-secondary/18 ring-1 ring-secondary/14",
-      sheen,
-      "bg-[linear-gradient(90deg,rgba(255,141,74,0.18)_0%,rgba(255,141,74,0.10)_60%,rgba(255,255,255,0.55)_115%)]",
-      "text-ink-primary",
-      "shadow-soft",
-      "hover:shadow-ambient hover:border-secondary/26 hover:ring-secondary/20"
+      microSheen,
+      halo,
+      contrastRing,
+      // warm accent (deposit/reserve vibes)
+      "bg-[linear-gradient(90deg,rgba(255,176,122,0.34)_0%,rgba(255,206,160,0.18)_60%,rgba(255,248,240,0.86)_115%)]",
+      "border-amber-800/28",
+      "text-amber-950/86",
+      "hover:border-amber-800/32"
     ),
 
     warning: clsx(
-      // warm but not beige; uses sun palette lightly
-      "border border-sun-400/18 ring-1 ring-sun-400/12",
-      sheen,
-      "bg-[linear-gradient(90deg,rgba(255,192,113,0.20)_0%,rgba(255,246,232,0.70)_85%)]",
-      "text-ink-primary",
-      "shadow-soft",
-      "hover:shadow-ambient hover:border-sun-400/26 hover:ring-sun-400/18"
+      microSheen,
+      halo,
+      contrastRing,
+      "bg-[linear-gradient(90deg,rgba(255,192,113,0.36)_0%,rgba(255,248,240,0.88)_85%)]",
+      "border-amber-700/28",
+      "text-amber-950/86",
+      "hover:border-amber-700/32"
     ),
 
     success: clsx(
-      "border border-meadow-400/18 ring-1 ring-meadow-400/12",
-      sheen,
-      "bg-[linear-gradient(90deg,rgba(79,203,122,0.16)_0%,rgba(241,251,244,0.72)_90%)]",
-      "text-ink-primary",
-      "shadow-soft",
-      "hover:shadow-ambient hover:border-meadow-400/26 hover:ring-meadow-400/18"
+      microSheen,
+      halo,
+      contrastRing,
+      "bg-[linear-gradient(90deg,rgba(79,203,122,0.26)_0%,rgba(255,248,240,0.88)_90%)]",
+      "border-emerald-700/26",
+      "text-amber-950/86",
+      "hover:border-emerald-700/30"
     ),
   } as const;
 
   return (
     <span {...props} className={clsx(base, variants[variant], className)}>
-      {/* tiny corner sparkle — brand (no brown) */}
+      {/* tiny corner sparkle — subtle, not clicky */}
       {corner !== "none" && (
         <span
           aria-hidden="true"
           className={clsx(
             "pointer-events-none absolute h-2 w-2 rounded-full",
-            "opacity-60 group-hover:opacity-85 transition-opacity duration-200",
-            "bg-[radial-gradient(circle,rgba(255,255,255,0.70),rgba(79,156,255,0.18),rgba(63,161,126,0.14),transparent_72%)]",
+            "opacity-30 group-hover:opacity-45 transition-opacity duration-200",
+            "bg-[radial-gradient(circle,rgba(255,255,255,0.70),rgba(96,140,255,0.14),rgba(255,176,122,0.14),transparent_72%)]",
             corner === "tr" && "right-1 top-1",
             corner === "tl" && "left-1 top-1",
             corner === "br" && "right-1 bottom-1",

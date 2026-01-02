@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useTestimonials } from "@/hooks/useTestimonials";
@@ -27,8 +28,8 @@ function Stars({ value }: { value: number | null }) {
           <span
             key={i}
             className={[
-              "text-sm",
-              on ? "opacity-100" : "opacity-25",
+              "text-sm leading-none select-none",
+              on ? "opacity-100" : "opacity-20",
             ].join(" ")}
           >
             ★
@@ -43,9 +44,37 @@ function firstImage(t: Testimonial) {
   return t.images?.[0]?.url || null;
 }
 
+/**
+ * Header signature (same language as Puppies header):
+ * - Gradient ink title
+ * - Subtle animated sheen rule
+ *
+ * Note: CTA button is NOT “on-photo” — it’s a normal control, so it uses ink text.
+ */
+const titleInkStyle: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow:
+    "0 24px 64px rgba(12,16,22,0.22), " +
+    "0 7px 20px rgba(12,16,22,0.14), " +
+    "0 1px 2px rgba(12,16,22,0.16)",
+};
+
+const subtitleInkStyle: React.CSSProperties = {
+  color: "rgba(255, 236, 210, 0.82)",
+  textShadow:
+    "0 20px 56px rgba(12,16,22,0.20), " +
+    "0 6px 18px rgba(12,16,22,0.12), " +
+    "0 1px 2px rgba(12,16,22,0.14)",
+};
+
 export function TestimonialsSection() {
   const { testimonials, loading, error, refetch } = useTestimonials({
-    statuses: ["approved"], // RLS will also enforce this
+    statuses: ["approved"],
   });
 
   const [open, setOpen] = useState(false);
@@ -63,6 +92,14 @@ export function TestimonialsSection() {
   });
 
   const visible = useMemo(() => testimonials ?? [], [testimonials]);
+
+  const stats = useMemo(() => {
+    const list = visible.filter((t) => (t.rating ?? 0) > 0);
+    const count = list.length;
+    const avg =
+      count === 0 ? null : list.reduce((sum, t) => sum + (t.rating ?? 0), 0) / count;
+    return { count: visible.length, avg: avg ? Math.round(avg * 10) / 10 : null };
+  }, [visible]);
 
   async function submit() {
     setSubmitOk(null);
@@ -90,7 +127,6 @@ export function TestimonialsSection() {
 
     setSubmitting(true);
 
-    // 1) Insert testimonial
     const { data: inserted, error: insertErr } = await supabase
       .from("testimonials")
       .insert(payload)
@@ -103,7 +139,6 @@ export function TestimonialsSection() {
       return;
     }
 
-    // 2) Optional: attach photo URL (no storage yet)
     const photoUrl = draft.photo_url.trim();
     if (photoUrl) {
       const { error: imgErr } = await supabase.from("testimonial_images").insert({
@@ -114,7 +149,6 @@ export function TestimonialsSection() {
       });
 
       if (imgErr) {
-        // Non-fatal: testimonial was created
         setSubmitting(false);
         setSubmitOk(
           "Thanks! Your review was submitted. (Your photo link couldn’t be saved—no worries.)"
@@ -140,29 +174,67 @@ export function TestimonialsSection() {
       photo_url: "",
     });
 
-    // Doesn’t change approved list immediately (pending), but keeps UI fresh
     await refetch();
   }
 
   return (
-    <section className="mt-12">
+    <section className="relative">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight">
+          <h2 className="text-2xl font-extrabold tracking-tight" style={titleInkStyle}>
             Happy families
           </h2>
-          <p className="mt-2 text-sm opacity-80">
+
+          <div
+            className="mt-2 h-[2px] w-[140px] rounded-full opacity-95 shadow-[0_10px_28px_rgba(12,16,22,0.14)]"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(255,206,160,0.78), rgba(216,232,255,0.56), rgba(255,206,160,0.74))",
+              backgroundSize: "220% 100%",
+              animation: "woofSheenTestimonials 10s ease-in-out infinite",
+            }}
+            aria-hidden
+          />
+
+          <p className="mt-3 text-sm" style={subtitleInkStyle}>
             Little notes from people who adopted and took a puppy home.
           </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs" style={subtitleInkStyle}>
+            {stats.avg != null && (
+              <span className="inline-flex items-center gap-2">
+                <span className="font-extrabold">★ {stats.avg}</span>
+                <span className="opacity-80">average</span>
+              </span>
+            )}
+            {stats.count > 0 && (
+              <span className="opacity-80">
+                {stats.count} {stats.count === 1 ? "review" : "reviews"}
+              </span>
+            )}
+          </div>
         </div>
 
+        {/* CTA is a normal UI control — darker tone + ink label (no white text). */}
         <button
           onClick={() => {
             setSubmitOk(null);
             setSubmitErr(null);
             setOpen(true);
           }}
-          className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold bg-black/90 text-white hover:bg-black transition"
+          className={[
+            "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold",
+            "transition active:translate-y-[1px]",
+            "border border-amber-950/18 ring-1 ring-inset ring-white/10",
+            "shadow-[0_16px_44px_-28px_rgba(17,24,39,0.46)]",
+            "hover:shadow-[0_18px_54px_-30px_rgba(17,24,39,0.56)]",
+          ].join(" ")}
+          style={{
+            // warm “elevated” control, slightly darker than cards but not harsh
+            background:
+              "linear-gradient(180deg, rgba(255,240,224,0.92) 0%, rgba(255,232,214,0.84) 100%)",
+            color: "rgb(34 40 50)",
+          }}
         >
           Leave a review
         </button>
@@ -174,7 +246,7 @@ export function TestimonialsSection() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-3xl bg-white/60 p-5 ring-1 ring-black/10"
+                className="rounded-3xl bg-[rgba(255,248,242,0.78)] p-5 ring-1 ring-inset ring-white/12 border border-amber-950/14 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.28)]"
               >
                 <div className="h-4 w-1/2 rounded bg-black/10 animate-pulse" />
                 <div className="mt-3 h-16 rounded bg-black/10 animate-pulse" />
@@ -183,13 +255,15 @@ export function TestimonialsSection() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-3xl bg-white/60 p-5 ring-1 ring-black/10">
-            <div className="text-sm font-bold">Couldn’t load testimonials</div>
-            <div className="mt-1 text-sm opacity-80">{error}</div>
+          <div className="rounded-3xl bg-[rgba(255,248,242,0.78)] p-5 border border-amber-950/14 ring-1 ring-inset ring-white/12 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.28)]">
+            <div className="text-sm font-extrabold text-ink-primary">
+              Couldn’t load testimonials
+            </div>
+            <div className="mt-1 text-sm text-ink-secondary">{error}</div>
           </div>
         ) : visible.length === 0 ? (
-          <div className="rounded-3xl bg-white/60 p-5 ring-1 ring-black/10">
-            <div className="text-sm font-semibold">
+          <div className="rounded-3xl bg-[rgba(255,248,242,0.78)] p-5 border border-amber-950/14 ring-1 ring-inset ring-white/12 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.28)]">
+            <div className="text-sm font-semibold text-ink-primary">
               No reviews yet — be the first ❤️
             </div>
           </div>
@@ -197,38 +271,50 @@ export function TestimonialsSection() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((t) => {
               const img = firstImage(t);
+
               return (
                 <article
                   key={t.id}
-                  className="overflow-hidden rounded-3xl bg-white/70 ring-1 ring-black/10 backdrop-blur"
+                  className={[
+                    "group overflow-hidden rounded-3xl",
+                    "bg-[rgba(255,248,242,0.80)] border border-amber-950/14 ring-1 ring-inset ring-white/12",
+                    "shadow-[0_12px_34px_-22px_rgba(17,24,39,0.26)]",
+                    "transition-transform duration-200",
+                    "hover:-translate-y-[2px]",
+                    "hover:shadow-[0_18px_44px_-24px_rgba(17,24,39,0.34)]",
+                  ].join(" ")}
                 >
                   {img && (
-                    <div className="h-44 w-full overflow-hidden">
+                    <div className="relative h-44 w-full overflow-hidden">
                       <img
                         src={img}
                         alt={t.images?.[0]?.alt || "Adoption photo"}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                         loading="lazy"
                       />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(255,248,242,0.00)] via-[rgba(255,248,242,0.00)] to-[rgba(255,248,242,0.22)]" />
                     </div>
                   )}
 
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-extrabold">
+                        <div className="text-sm font-extrabold text-ink-primary">
                           {t.author_name}
                         </div>
                         {t.author_location && (
-                          <div className="text-xs opacity-70">
+                          <div className="text-xs text-ink-secondary">
                             {t.author_location}
                           </div>
                         )}
                       </div>
-                      <Stars value={t.rating} />
+
+                      <div className="text-ink-primary">
+                        <Stars value={t.rating} />
+                      </div>
                     </div>
 
-                    <p className="mt-3 text-sm leading-relaxed opacity-90">
+                    <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
                       {t.message}
                     </p>
                   </div>
@@ -239,7 +325,7 @@ export function TestimonialsSection() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal (kept as-is) */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <button
@@ -248,18 +334,18 @@ export function TestimonialsSection() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white/85 p-6 ring-1 ring-black/10 backdrop-blur">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-[rgba(255,248,242,0.92)] p-6 border border-amber-950/14 ring-1 ring-inset ring-white/12 shadow-[0_18px_52px_-26px_rgba(17,24,39,0.44)]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-xl font-extrabold">Leave a review</div>
-                <div className="mt-1 text-sm opacity-75">
+                <div className="text-xl font-extrabold text-ink-primary">Leave a review</div>
+                <div className="mt-1 text-sm text-ink-secondary">
                   Short + honest is perfect. Photos optional.
                 </div>
               </div>
 
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-full px-3 py-1 text-sm font-bold ring-1 ring-black/10 hover:ring-black/20"
+                className="rounded-full px-3 py-1 text-sm font-extrabold border border-amber-950/18 bg-[rgba(255,240,225,0.72)] hover:bg-[rgba(255,240,225,0.82)]"
               >
                 ✕
               </button>
@@ -268,9 +354,7 @@ export function TestimonialsSection() {
             <div className="mt-5 grid gap-3">
               <input
                 value={draft.author_name}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, author_name: e.target.value }))
-                }
+                onChange={(e) => setDraft((d) => ({ ...d, author_name: e.target.value }))}
                 placeholder="Your name *"
                 className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
               />
@@ -285,7 +369,7 @@ export function TestimonialsSection() {
               />
 
               <div className="grid gap-2">
-                <div className="text-sm font-bold">Rating</div>
+                <div className="text-sm font-extrabold text-ink-primary">Rating</div>
                 <div className="flex gap-2">
                   {([1, 2, 3, 4, 5] as const).map((n) => (
                     <button
@@ -293,10 +377,10 @@ export function TestimonialsSection() {
                       type="button"
                       onClick={() => setDraft((d) => ({ ...d, rating: n }))}
                       className={[
-                        "rounded-full px-3 py-2 text-sm font-bold ring-1 transition",
+                        "rounded-full px-3 py-2 text-sm font-extrabold border transition",
                         draft.rating === n
-                          ? "bg-black/90 text-white ring-black/10"
-                          : "bg-white/70 ring-black/10 hover:ring-black/20",
+                          ? "bg-[rgba(34,40,50,0.92)] text-white border-black/10"
+                          : "bg-[rgba(255,240,225,0.72)] text-ink-primary border-amber-950/18 hover:border-amber-950/28",
                       ].join(" ")}
                     >
                       {n}★
@@ -307,18 +391,14 @@ export function TestimonialsSection() {
 
               <textarea
                 value={draft.message}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, message: e.target.value }))
-                }
+                onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))}
                 placeholder="Write your message *"
                 className="min-h-[120px] w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
               />
 
               <input
                 value={draft.photo_url}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, photo_url: e.target.value }))
-                }
+                onChange={(e) => setDraft((d) => ({ ...d, photo_url: e.target.value }))}
                 placeholder="Photo URL (optional for now)"
                 className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
               />
@@ -337,7 +417,7 @@ export function TestimonialsSection() {
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 <button
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold bg-white/70 ring-1 ring-black/10 hover:ring-black/15 transition"
+                  className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold bg-[rgba(255,240,225,0.72)] border border-amber-950/18 hover:bg-[rgba(255,240,225,0.82)] transition"
                 >
                   Cancel
                 </button>
@@ -346,8 +426,8 @@ export function TestimonialsSection() {
                   disabled={submitting}
                   onClick={submit}
                   className={[
-                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold",
-                    "bg-black/90 text-white hover:bg-black transition",
+                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
+                    "bg-[rgba(34,40,50,0.92)] text-white hover:bg-[rgba(34,40,50,1)] transition",
                     submitting ? "opacity-60 cursor-not-allowed" : "",
                   ].join(" ")}
                 >
@@ -355,13 +435,30 @@ export function TestimonialsSection() {
                 </button>
               </div>
 
-              <p className="text-xs opacity-70">
+              <p className="text-xs text-ink-secondary">
                 Reviews are manually approved to prevent spam. ❤️
               </p>
             </div>
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        @keyframes woofSheenTestimonials {
+          0% {
+            background-position: 0% 50%;
+            filter: saturate(1) brightness(1);
+          }
+          50% {
+            background-position: 100% 50%;
+            filter: saturate(1.05) brightness(1.03);
+          }
+          100% {
+            background-position: 0% 50%;
+            filter: saturate(1) brightness(1);
+          }
+        }
+      `}</style>
     </section>
   );
 }

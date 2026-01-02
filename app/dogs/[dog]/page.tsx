@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+
+import { Container } from "@/components/ui/Container";
+import { LandingHeader } from "@/components/landing/LandingHeader";
 
 import type { DogImage, DogRow, Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
 
-type ReservationDraft = {
-  buyer_name: string;
-  buyer_phone: string;
-  buyer_email: string;
-  payment_method: string;
-  transaction_id: string;
-  note: string;
-};
-
+/* -----------------------------
+   Helpers
+------------------------------ */
 function moneyFromCents(cents?: number | null) {
   if (cents == null) return null;
   return new Intl.NumberFormat("en-US", {
@@ -29,11 +27,7 @@ function formatDate(dateStr?: string | null) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function buildDogWithImages(row: DogRow, images: DogImage[]): Dog {
@@ -71,7 +65,7 @@ async function copyToClipboard(text: string) {
 }
 
 /* -----------------------------
-   Picsum placeholder dog
+   Placeholder dog (design mode)
 ------------------------------ */
 function picsum(seed: string, w: number, h: number) {
   const s = encodeURIComponent(seed);
@@ -128,7 +122,7 @@ function buildPlaceholderDog(dogParam: string): Dog {
 }
 
 /* -----------------------------
-   UI helpers
+   UI helpers (same language)
 ------------------------------ */
 function softPanel(cls?: string) {
   return [
@@ -141,19 +135,60 @@ function softPanel(cls?: string) {
   ].join(" ");
 }
 
-function subtleChip(cls?: string) {
+function subtlePill(cls?: string) {
   return [
-    "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
-    "bg-[rgba(255,240,225,0.72)] border border-amber-950/12",
-    "text-ink-primary",
+    "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+    "bg-white/65 border border-amber-950/10",
+    "text-ink-secondary",
     cls ?? "",
   ].join(" ");
 }
 
+/* -----------------------------
+   Typography conventions
+   (match /app/page + testimonials)
+------------------------------ */
+const photoTitleStyle: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow:
+    "0 24px 64px rgba(12,16,22,0.26), " +
+    "0 7px 20px rgba(12,16,22,0.16), " +
+    "0 1px 2px rgba(12,16,22,0.18), " +
+    "0 -1px 0 rgba(255,235,210,0.18)",
+};
+
+const photoBodyStyle: React.CSSProperties = {
+  color: "rgba(255, 236, 210, 0.86)",
+  textShadow:
+    "0 22px 58px rgba(12,16,22,0.24), " +
+    "0 6px 18px rgba(12,16,22,0.14), " +
+    "0 1px 2px rgba(12,16,22,0.16)",
+};
+
+function payGlyph(kind: "venmo" | "cashapp" | "paypal" | "zelle" | "phone") {
+  // Intentional: simple, warm, consistent “inline glyph” vibe (no plates, no boxes).
+  // If you want brand-perfect later, we can swap these for react-icons used on HomeHeroSlab.
+  switch (kind) {
+    case "venmo":
+      return "V";
+    case "cashapp":
+      return "$";
+    case "paypal":
+      return "P";
+    case "zelle":
+      return "Z";
+    case "phone":
+      return "☎";
+  }
+}
+
 export default function DogDetailPage() {
   const params = useParams<{ dog: string }>();
-  const router = useRouter();
-
   const dogParam = params?.dog ? String(params.dog) : "";
 
   const [dog, setDog] = useState<Dog | null>(null);
@@ -164,25 +199,19 @@ export default function DogDetailPage() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const [draft, setDraft] = useState<ReservationDraft>({
-    buyer_name: "",
-    buyer_phone: "",
-    buyer_email: "",
-    payment_method: "",
-    transaction_id: "",
-    note: "",
-  });
+  // One calm message slot (no extra UI)
+  const [note, setNote] = useState<string | null>(null);
 
+  // Reserve panel (kept simple)
+  const [draftName, setDraftName] = useState("");
+  const [draftPhone, setDraftPhone] = useState("");
+  const [draftMethod, setDraftMethod] = useState("");
+  const [draftTxn, setDraftTxn] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitOk, setSubmitOk] = useState<string | null>(null);
-  const [submitErr, setSubmitErr] = useState<string | null>(null);
 
-  const deposit = useMemo(() => moneyFromCents(dog?.deposit_amount_cents), [
-    dog?.deposit_amount_cents,
-  ]);
-  const price = useMemo(() => moneyFromCents(dog?.price_amount_cents), [
-    dog?.price_amount_cents,
-  ]);
+  const deposit = useMemo(() => moneyFromCents(dog?.deposit_amount_cents), [dog?.deposit_amount_cents]);
+  const price = useMemo(() => moneyFromCents(dog?.price_amount_cents), [dog?.price_amount_cents]);
 
   const images = useMemo(() => allImages(dog), [dog]);
   const primary = useMemo(() => bestPrimaryImage(dog), [dog]);
@@ -196,7 +225,6 @@ export default function DogDetailPage() {
 
   useEffect(() => {
     if (!dogParam) return;
-
     let alive = true;
 
     async function load() {
@@ -277,7 +305,6 @@ export default function DogDetailPage() {
       if (!merchantRes.error) setMerchant(merchantRes.data?.[0] ?? null);
       else setMerchant(null);
 
-      // No real dog yet => placeholder mode (for design)
       if (!dogRow) {
         const ph = buildPlaceholderDog(dogParam);
         setDog(ph);
@@ -287,7 +314,6 @@ export default function DogDetailPage() {
         return;
       }
 
-      // Load images
       const { data: imgData, error: imgErr } = await supabase
         .from("dog_images")
         .select("id,dog_id,url,alt,sort_order,created_at")
@@ -301,16 +327,11 @@ export default function DogDetailPage() {
       const imagesSafe = imgErr ? [] : imgData ?? [];
       let full = buildDogWithImages(dogRow, imagesSafe);
 
-      // If real dog has no images, still provide placeholders so layout is testable
       const hasAnyImage = Boolean(full.cover_image_url || full.images?.length);
       if (!hasAnyImage) {
         const seed = full.slug || full.id || dogParam;
         const ph = buildPlaceholderDog(String(seed));
-        full = {
-          ...full,
-          cover_image_url: ph.cover_image_url,
-          images: ph.images,
-        } as Dog;
+        full = { ...full, cover_image_url: ph.cover_image_url, images: ph.images } as Dog;
       }
 
       setDog(full);
@@ -327,502 +348,470 @@ export default function DogDetailPage() {
     };
   }, [dogParam]);
 
-  async function submitReservation() {
+  async function submitReservationRequest() {
     if (!dog) return;
 
     if (isPlaceholder) {
-      setSubmitErr("Preview mode: add real listings to enable reservations.");
+      setNote("Preview pup: add real listings to enable reservation requests.");
+      return;
+    }
+
+    const buyer_name = draftName.trim();
+    const buyer_phone = draftPhone.trim();
+    const payment_method = draftMethod.trim();
+
+    if (!buyer_name || !buyer_phone || !payment_method) {
+      setNote("Please add name, phone, and payment method.");
       return;
     }
 
     setSubmitting(true);
-    setSubmitOk(null);
-    setSubmitErr(null);
+    setNote(null);
 
     const payload = {
       dog_id: dog.id,
-      buyer_name: draft.buyer_name.trim(),
-      buyer_phone: draft.buyer_phone.trim(),
-      buyer_email: draft.buyer_email.trim() ? draft.buyer_email.trim() : null,
-      payment_method: draft.payment_method.trim(),
-      transaction_id: draft.transaction_id.trim() ? draft.transaction_id.trim() : null,
-      note: draft.note.trim() ? draft.note.trim() : null,
+      buyer_name,
+      buyer_phone,
+      buyer_email: null,
+      payment_method,
+      transaction_id: draftTxn.trim() ? draftTxn.trim() : null,
+      note: draftMessage.trim() ? draftMessage.trim() : null,
     };
-
-    if (!payload.buyer_name || !payload.buyer_phone || !payload.payment_method) {
-      setSubmitErr("Please fill name, phone, and payment method.");
-      setSubmitting(false);
-      return;
-    }
 
     const { error } = await supabase.from("reservation_requests").insert(payload);
 
     if (error) {
-      setSubmitErr(error.message);
+      setNote(error.message);
       setSubmitting(false);
       return;
     }
 
-    setSubmitOk("Request sent! Now text or call to confirm your reservation.");
+    setNote("Request sent. Text or call to confirm your reservation.");
     setSubmitting(false);
-    setDraft({
-      buyer_name: "",
-      buyer_phone: "",
-      buyer_email: "",
-      payment_method: "",
-      transaction_id: "",
-      note: "",
-    });
+
+    setDraftName("");
+    setDraftPhone("");
+    setDraftMethod("");
+    setDraftTxn("");
+    setDraftMessage("");
   }
 
-  // One shared "hero height" so gallery + right rail match on desktop
+  // Equal height on desktop
   const heroHeight = "lg:h-[640px]";
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 pb-14 pt-8 sm:px-6 sm:pt-10">
-        {/* Header row */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,240,225,0.72)] px-4 py-2 text-sm font-semibold border border-amber-950/12 hover:border-amber-950/18"
+      <LandingHeader pupsAnchorId="pups" cta={{ label: "All puppies →", href: "/dogs" }} />
+
+      <Container size="xl" className="pb-12 sm:pb-14 lg:pb-16">
+        {/* Header area stays OUTSIDE the fade container */}
+        <section className="mt-8 sm:mt-10">
+          <div className="max-w-[86ch]">
+            <div className="flex items-center gap-3">
+
+              {dog?.status ? (
+                <span className={subtlePill()}>
+                  Status: <span className="font-extrabold text-ink-primary">{dog.status}</span>
+                </span>
+              ) : null}
+            </div>
+
+            <h1 className="mt-5 text-2xl sm:text-3xl font-extrabold tracking-tight" style={photoTitleStyle}>
+              {loading ? "Loading puppy…" : dog?.name ?? "Puppy details"}
+            </h1>
+
+            <div
+              className="mt-2 h-[2px] w-[132px] rounded-full opacity-95 shadow-[0_10px_28px_rgba(12,16,22,0.16)] motion-reduce:animate-none animate-[woofSheen_10s_ease-in-out_infinite]"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(255,206,160,0.78), rgba(216,232,255,0.56), rgba(255,206,160,0.74))",
+                backgroundSize: "220% 100%",
+              }}
+              aria-hidden
+            />
+
+            <p className="mt-3 text-sm sm:text-base leading-relaxed" style={photoBodyStyle}>
+              Tap photos, review details, then reserve with a deposit and a quick text/call.
+              {isPlaceholder && " (Preview pup for design testing.)"}
+            </p>
+
+            {note ? (
+              <div className="mt-3 rounded-2xl bg-white/60 px-4 py-3 text-xs text-ink-secondary border border-amber-950/10">
+                {note}
+              </div>
+            ) : null}
+
+            {error ? (
+              <p className="mt-2 text-xs leading-relaxed" style={{ ...photoBodyStyle, opacity: 0.82 }}>
+                Couldn’t load database images — showing placeholders. ({error})
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {/* Fade container starts at hero image (exactly as requested) */}
+        <section className="mt-7 sm:mt-8 lg:mt-10">
+          <div className="relative">
+            {/* ambient glow layer */}
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-[44px] opacity-[0.95]"
+              style={{
+                background:
+                  "radial-gradient(1100px 520px at 18% 0%, rgba(255,255,255,0.20), transparent 62%)," +
+                  "radial-gradient(980px 520px at 92% 10%, rgba(216,232,255,0.16), transparent 66%)," +
+                  "radial-gradient(1200px 640px at 50% 100%, rgba(255,206,160,0.12), transparent 72%)",
+              }}
+            />
+
+            {/* showroom shell (like Dogs page) */}
+            <div
+              className={[
+                "relative rounded-[44px]",
+                "bg-[rgba(255,248,242,0.62)]",
+                "border border-amber-950/14",
+                "ring-1 ring-inset ring-white/12",
+                "shadow-[0_18px_52px_-36px_rgba(17,24,39,0.55)]",
+                "p-3 sm:p-4 lg:p-5",
+              ].join(" ")}
             >
-              ← Back
-            </button>
-
-            <a
-              href="/#pups"
-              className="text-sm font-semibold text-ink-secondary hover:text-ink-primary"
-            >
-              All puppies
-            </a>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {isPlaceholder && <span className={subtleChip()}>Preview mode</span>}
-            {dog?.status && (
-              <span className={subtleChip("bg-white/65")}>
-                Status: <span className="font-extrabold">{dog.status}</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {loading ? (
-          <div className={softPanel("p-6")}>
-            <div className="h-7 w-1/3 rounded bg-black/10 animate-pulse" />
-            <div className="mt-4 h-[420px] rounded-2xl bg-black/10 animate-pulse" />
-            <div className="mt-5 h-4 w-2/3 rounded bg-black/10 animate-pulse" />
-          </div>
-        ) : !dog ? (
-          <div className={softPanel("p-6")}>
-            <div className="text-lg font-extrabold text-ink-primary">Puppy not found</div>
-            <div className="mt-2 text-sm text-ink-secondary">Try another link.</div>
-          </div>
-        ) : (
-          <>
-            {/* HERO ROW: balanced + equal height */}
-            <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 lg:items-stretch">
-              {/* Left: BIG gallery */}
-              <section className="lg:col-span-8">
-                <div className={softPanel(["overflow-hidden", heroHeight].join(" "))}>
-                  <div className="relative h-[360px] sm:h-[480px] lg:h-[520px]">
-                    {selected ? (
-                      <img
-                        src={selected}
-                        alt={dog.name}
-                        className="h-full w-full object-cover"
-                        loading="eager"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-black/10" />
-                    )}
-
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
-                        Photos
-                      </span>
-
-                      {images.length > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-ink-secondary border border-amber-950/10">
-                          {Math.max(
-                            1,
-                            images.findIndex((i) => i.url === selected) + 1
-                          )}
-                          /{images.length}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Thumbnails anchored at bottom; keeps the card height consistent */}
-                  {images.length > 1 && (
-                    <div className="relative border-t border-amber-950/8 bg-[rgba(255,248,242,0.62)] p-4">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[rgba(255,248,242,0.95)] to-transparent" />
-                      <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[rgba(255,248,242,0.95)] to-transparent" />
-
-                      <div className="flex gap-3 overflow-x-auto pr-6">
-                        {images.map((img) => {
-                          const active = img.url === selected;
-                          return (
-                            <button
-                              key={img.url}
-                              onClick={() => setSelectedImage(img.url)}
-                              className={[
-                                "shrink-0 overflow-hidden rounded-2xl ring-1 transition",
-                                active
-                                  ? "ring-black/25"
-                                  : "ring-black/10 hover:ring-black/18",
-                              ].join(" ")}
-                              aria-label="Select image"
-                            >
-                              <img
-                                src={img.url}
-                                alt={img.alt}
-                                className="h-20 w-28 object-cover"
-                                loading="lazy"
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+              {loading ? (
+                <div className={softPanel("p-6")}>
+                  <div className="h-7 w-1/3 rounded bg-black/10 animate-pulse" />
+                  <div className="mt-4 h-[420px] rounded-2xl bg-black/10 animate-pulse" />
+                  <div className="mt-5 h-4 w-2/3 rounded bg-black/10 animate-pulse" />
                 </div>
+              ) : !dog ? (
+                <div className={softPanel("p-6")}>
+                  <div className="text-lg font-extrabold text-ink-primary">Puppy not found</div>
+                  <div className="mt-2 text-sm text-ink-secondary">Try another link.</div>
+                </div>
+              ) : (
+                <>
+                  {/* HERO ROW */}
+                  <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 lg:items-stretch">
+                    {/* Left: gallery */}
+                    <section className="lg:col-span-8">
+                      <div className={softPanel(["overflow-hidden", heroHeight].join(" "))}>
+                        <div className="relative h-[360px] sm:h-[480px] lg:h-[520px]">
+                          {selected ? (
+                            <img
+                              src={selected}
+                              alt={dog.name}
+                              className="h-full w-full object-cover"
+                              loading="eager"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-black/10" />
+                          )}
 
-                {error && (
-                  <div className="mt-3 rounded-2xl bg-white/65 px-4 py-3 text-xs text-ink-secondary border border-amber-950/10">
-                    Gallery note: couldn’t load database images — showing placeholders. ({error})
-                  </div>
-                )}
-              </section>
-
-              {/* Right: equal-height info rail */}
-              <section className="lg:col-span-4">
-                <div className={softPanel(["p-6", "flex flex-col", heroHeight].join(" "))}>
-                  {/* Top: name + meta */}
-                  <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-ink-primary">
-                      {dog.name}
-                    </h1>
-
-                    <div className="mt-3 text-sm text-ink-secondary">
-                      {[
-                        dog.breed ? dog.breed : null,
-                        dog.age_weeks != null ? `${dog.age_weeks} weeks` : null,
-                        dog.sex ? dog.sex : null,
-                        dog.color ? dog.color : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </div>
-
-                    {dog.ready_date && (
-                      <div className="mt-2 text-sm text-ink-secondary">
-                        Ready:{" "}
-                        <span className="font-extrabold text-ink-primary">
-                          {formatDate(dog.ready_date)}
-                        </span>
-                      </div>
-                    )}
-
-                    {(deposit || price) && (
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        {deposit && (
-                          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-ink-primary border border-emerald-950/10">
-                            Deposit {deposit}
-                          </span>
-                        )}
-                        {price && (
-                          <span className="rounded-full bg-amber-500/12 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
-                            Total {price}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Middle: compact description + payment list (scroll if needed, but rail height stays locked) */}
-                  <div className="mt-5 flex-1 overflow-hidden">
-                    <div className="h-full overflow-y-auto pr-1">
-                      {dog.description && (
-                        <p className="text-sm leading-relaxed text-ink-secondary">
-                          {dog.description}
-                        </p>
-                      )}
-
-                      {/* Payment options */}
-                      <div className="mt-5 rounded-2xl bg-white/60 p-4 border border-amber-950/10">
-                        <div className="text-sm font-extrabold text-ink-primary">
-                          Payment options
+                          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                            <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
+                              Photos
+                            </span>
+                            {images.length > 0 ? (
+                              <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-ink-secondary border border-amber-950/10">
+                                {Math.max(1, images.findIndex((i) => i.url === selected) + 1)}/{images.length}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
 
-                        <div className="mt-3 grid gap-2 text-sm">
-                          {merchant?.venmo_url && (
-                            <div className="flex items-center justify-between gap-3">
-                              <a
-                                className="font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
-                                href={merchant.venmo_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Venmo
-                              </a>
-                              <button
-                                onClick={async () => {
-                                  const ok = await copyToClipboard(merchant.venmo_url || "");
-                                  setSubmitOk(ok ? "Venmo link copied." : "Couldn’t copy.");
-                                }}
-                                className="rounded-full px-3 py-1 text-xs font-semibold bg-white/65 border border-amber-950/12 hover:border-amber-950/18"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                          )}
+                        {/* thumbnails */}
+                        {images.length > 1 ? (
+                          <div className="relative border-t border-amber-950/8 bg-[rgba(255,248,242,0.62)] p-4">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[rgba(255,248,242,0.95)] to-transparent" />
+                            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[rgba(255,248,242,0.95)] to-transparent" />
 
-                          {merchant?.cashapp_url && (
-                            <div className="flex items-center justify-between gap-3">
-                              <a
-                                className="font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
-                                href={merchant.cashapp_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Cash App
-                              </a>
-                              <button
-                                onClick={async () => {
-                                  const ok = await copyToClipboard(merchant.cashapp_url || "");
-                                  setSubmitOk(ok ? "Cash App link copied." : "Couldn’t copy.");
-                                }}
-                                className="rounded-full px-3 py-1 text-xs font-semibold bg-white/65 border border-amber-950/12 hover:border-amber-950/18"
-                              >
-                                Copy
-                              </button>
+                            <div className="flex gap-3 overflow-x-auto pr-6">
+                              {images.map((img) => {
+                                const active = img.url === selected;
+                                return (
+                                  <button
+                                    key={img.url}
+                                    onClick={() => setSelectedImage(img.url)}
+                                    className={[
+                                      "shrink-0 overflow-hidden rounded-2xl ring-1 transition",
+                                      active ? "ring-black/25" : "ring-black/10 hover:ring-black/18",
+                                    ].join(" ")}
+                                    aria-label="Select image"
+                                  >
+                                    <img src={img.url} alt={img.alt} className="h-20 w-28 object-cover" loading="lazy" />
+                                  </button>
+                                );
+                              })}
                             </div>
-                          )}
+                          </div>
+                        ) : null}
+                      </div>
+                    </section>
 
-                          {merchant?.paypal_url && (
-                            <div className="flex items-center justify-between gap-3">
-                              <a
-                                className="font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
-                                href={merchant.paypal_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                PayPal
-                              </a>
-                              <button
-                                onClick={async () => {
-                                  const ok = await copyToClipboard(merchant.paypal_url || "");
-                                  setSubmitOk(ok ? "PayPal link copied." : "Couldn’t copy.");
-                                }}
-                                className="rounded-full px-3 py-1 text-xs font-semibold bg-white/65 border border-amber-950/12 hover:border-amber-950/18"
-                              >
-                                Copy
-                              </button>
+                    {/* Right: calm info rail */}
+                    <section className="lg:col-span-4">
+                      <div className={softPanel(["p-6", "flex flex-col", heroHeight].join(" "))}>
+                        <div>
+                          <div className="text-sm text-ink-secondary">
+                            {[
+                              dog.breed ? dog.breed : null,
+                              dog.age_weeks != null ? `${dog.age_weeks} weeks` : null,
+                              dog.sex ? dog.sex : null,
+                              dog.color ? dog.color : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+
+                          {dog.ready_date ? (
+                            <div className="mt-2 text-sm text-ink-secondary">
+                              Ready:{" "}
+                              <span className="font-extrabold text-ink-primary">{formatDate(dog.ready_date)}</span>
                             </div>
-                          )}
+                          ) : null}
 
-                          {merchant?.zelle_recipient && (
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <div className="font-semibold text-ink-primary">Zelle</div>
-                                <div className="text-xs text-ink-secondary">
-                                  {merchant.zelle_recipient}
+                          {(deposit || price) ? (
+                            <div className="mt-5 flex flex-wrap gap-2">
+                              {deposit ? (
+                                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-ink-primary border border-emerald-950/10">
+                                  Deposit {deposit}
+                                </span>
+                              ) : null}
+                              {price ? (
+                                <span className="rounded-full bg-amber-500/12 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
+                                  Total {price}
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-5 flex-1 overflow-hidden">
+                          <div className="h-full overflow-y-auto pr-1">
+                            {dog.description ? (
+                              <p className="text-sm leading-relaxed text-ink-secondary">{dog.description}</p>
+                            ) : null}
+
+                            {/* Reserve block: single calm panel (no extra sections) */}
+                            <div className="mt-5 rounded-2xl bg-white/60 p-4 border border-amber-950/10">
+                              <div className="text-sm font-extrabold text-ink-primary">Reserve this puppy</div>
+                              <p className="mt-2 text-sm text-ink-secondary leading-relaxed">
+                                Send the deposit using one of the methods below, then text/call to confirm.
+                              </p>
+
+                              {/* Payment rows (minimal + consistent) */}
+                              <div className="mt-4 space-y-2">
+                                {merchant?.venmo_url ? (
+                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
+                                        {payGlyph("venmo")}
+                                      </span>
+                                      <a
+                                        href={merchant.venmo_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
+                                      >
+                                        Venmo
+                                      </a>
+                                    </div>
+                                    <button
+                                      onClick={async () => {
+                                        const ok = await copyToClipboard(merchant.venmo_url || "");
+                                        setNote(ok ? "Venmo link copied." : "Couldn’t copy.");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
+                                ) : null}
+
+                                {merchant?.cashapp_url ? (
+                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
+                                        {payGlyph("cashapp")}
+                                      </span>
+                                      <a
+                                        href={merchant.cashapp_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
+                                      >
+                                        Cash App
+                                      </a>
+                                    </div>
+                                    <button
+                                      onClick={async () => {
+                                        const ok = await copyToClipboard(merchant.cashapp_url || "");
+                                        setNote(ok ? "Cash App link copied." : "Couldn’t copy.");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
+                                ) : null}
+
+                                {merchant?.paypal_url ? (
+                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
+                                        {payGlyph("paypal")}
+                                      </span>
+                                      <a
+                                        href={merchant.paypal_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
+                                      >
+                                        PayPal
+                                      </a>
+                                    </div>
+                                    <button
+                                      onClick={async () => {
+                                        const ok = await copyToClipboard(merchant.paypal_url || "");
+                                        setNote(ok ? "PayPal link copied." : "Couldn’t copy.");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
+                                ) : null}
+
+                                {merchant?.zelle_recipient ? (
+                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
+                                        {payGlyph("zelle")}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div className="text-sm font-semibold text-ink-primary">Zelle</div>
+                                        <div className="truncate text-xs text-ink-secondary">{merchant.zelle_recipient}</div>
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={async () => {
+                                        const ok = await copyToClipboard(merchant.zelle_recipient || "");
+                                        setNote(ok ? "Zelle recipient copied." : "Couldn’t copy.");
+                                      }}
+                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              {/* Primary actions (same vibe as existing buttons) */}
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                <a
+                                  href={smsHref ?? undefined}
+                                  className={[
+                                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
+                                    "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)]",
+                                    "hover:bg-[rgba(34,40,50,1)] transition",
+                                    phone ? "" : "opacity-50 pointer-events-none",
+                                  ].join(" ")}
+                                >
+                                  Text to reserve
+                                </a>
+
+                                <a
+                                  href={telHref ?? undefined}
+                                  className={[
+                                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
+                                    "bg-white/70 border border-amber-950/12 text-ink-primary",
+                                    "hover:border-amber-950/18 transition",
+                                    phone ? "" : "opacity-50 pointer-events-none",
+                                  ].join(" ")}
+                                >
+                                  Call
+                                </a>
+                              </div>
+
+                              {/* Optional request (kept minimal, not a second section) */}
+                              <div className="mt-4">
+                                <div className="text-xs font-semibold text-ink-secondary">
+                                  Optional: send a quick request
+                                </div>
+
+                                <div className="mt-2 grid gap-3">
+                                  <input
+                                    value={draftName}
+                                    onChange={(e) => setDraftName(e.target.value)}
+                                    placeholder="Your name *"
+                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                                  />
+                                  <input
+                                    value={draftPhone}
+                                    onChange={(e) => setDraftPhone(e.target.value)}
+                                    placeholder="Your phone *"
+                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                                  />
+                                  <input
+                                    value={draftMethod}
+                                    onChange={(e) => setDraftMethod(e.target.value)}
+                                    placeholder="Payment method *"
+                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                                  />
+                                  <input
+                                    value={draftTxn}
+                                    onChange={(e) => setDraftTxn(e.target.value)}
+                                    placeholder="Transaction ID / handle (optional)"
+                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                                  />
+                                  <textarea
+                                    value={draftMessage}
+                                    onChange={(e) => setDraftMessage(e.target.value)}
+                                    placeholder="Message (optional)"
+                                    className="min-h-[96px] w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                                  />
+
+                                  <button
+                                    disabled={submitting || isPlaceholder}
+                                    onClick={submitReservationRequest}
+                                    className={[
+                                      "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
+                                      "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)] hover:bg-[rgba(34,40,50,1)] transition",
+                                      submitting ? "opacity-60 cursor-not-allowed" : "",
+                                      isPlaceholder ? "opacity-50 cursor-not-allowed" : "",
+                                    ].join(" ")}
+                                  >
+                                    {isPlaceholder ? "Preview mode (disabled)" : submitting ? "Sending..." : "Send request"}
+                                  </button>
                                 </div>
                               </div>
-                              <button
-                                onClick={async () => {
-                                  const ok = await copyToClipboard(merchant.zelle_recipient || "");
-                                  setSubmitOk(ok ? "Zelle recipient copied." : "Couldn’t copy.");
-                                }}
-                                className="rounded-full px-3 py-1 text-xs font-semibold bg-white/65 border border-amber-950/12 hover:border-amber-950/18"
-                              >
-                                Copy
-                              </button>
                             </div>
-                          )}
-
-                          {phone && (
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <div className="font-semibold text-ink-primary">Phone</div>
-                                <div className="text-xs text-ink-secondary">{phone}</div>
-                              </div>
-                              <button
-                                onClick={async () => {
-                                  const ok = await copyToClipboard(phone);
-                                  setSubmitOk(ok ? "Phone number copied." : "Couldn’t copy.");
-                                }}
-                                className="rounded-full px-3 py-1 text-xs font-semibold bg-white/65 border border-amber-950/12 hover:border-amber-950/18"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3 text-xs text-ink-secondary">
-                          Pay the deposit, then text/call to confirm.
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </section>
                   </div>
-
-                  {/* Bottom: primary actions (always anchored to bottom for balance) */}
-                  <div className="mt-5">
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                      <a
-                        href={smsHref ?? undefined}
-                        className={[
-                          "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                          "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)]",
-                          "hover:bg-[rgba(34,40,50,1)] transition",
-                          phone ? "" : "opacity-50 pointer-events-none",
-                        ].join(" ")}
-                      >
-                        Text to reserve
-                      </a>
-
-                      <a
-                        href={telHref ?? undefined}
-                        className={[
-                          "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                          "bg-white/70 border border-amber-950/12 text-ink-primary",
-                          "hover:border-amber-950/18 transition",
-                          phone ? "" : "opacity-50 pointer-events-none",
-                        ].join(" ")}
-                      >
-                        Call
-                      </a>
-                    </div>
-
-                    <div className="mt-3 text-xs text-ink-secondary">
-                      Deposit reserves the puppy. Text/call right after payment.
-                    </div>
-                  </div>
-                </div>
-              </section>
+                </>
+              )}
             </div>
+          </div>
+        </section>
+      </Container>
 
-            {/* BELOW THE FOLD: reservation request (no longer destroys the hero balance) */}
-            <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:gap-8">
-              <section className="lg:col-span-8">
-                <div className={softPanel("p-6")}>
-                  <div className="text-lg font-extrabold text-ink-primary">
-                    Reservation request
-                  </div>
-                  <p className="mt-1 text-sm text-ink-secondary">
-                    Optional — this notifies the seller. You’ll still text/call to confirm.
-                  </p>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={draft.buyer_name}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, buyer_name: e.target.value }))
-                      }
-                      placeholder="Your name *"
-                      className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-                    <input
-                      value={draft.buyer_phone}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, buyer_phone: e.target.value }))
-                      }
-                      placeholder="Your phone *"
-                      className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-
-                    <input
-                      value={draft.buyer_email}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, buyer_email: e.target.value }))
-                      }
-                      placeholder="Your email (optional)"
-                      className="sm:col-span-2 w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-
-                    <input
-                      value={draft.payment_method}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, payment_method: e.target.value }))
-                      }
-                      placeholder="Payment method (Venmo, Cash App, Zelle, PayPal) *"
-                      className="sm:col-span-2 w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-
-                    <input
-                      value={draft.transaction_id}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, transaction_id: e.target.value }))
-                      }
-                      placeholder="Transaction ID / handle (optional)"
-                      className="sm:col-span-2 w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-
-                    <textarea
-                      value={draft.note}
-                      onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
-                      placeholder="Note (optional)"
-                      className="sm:col-span-2 min-h-[110px] w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                    />
-
-                    {submitErr && (
-                      <div className="sm:col-span-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-900 ring-1 ring-black/10">
-                        {submitErr}
-                      </div>
-                    )}
-                    {submitOk && (
-                      <div className="sm:col-span-2 rounded-xl bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-900 ring-1 ring-black/10">
-                        {submitOk}
-                      </div>
-                    )}
-
-                    <button
-                      disabled={submitting || isPlaceholder}
-                      onClick={submitReservation}
-                      className={[
-                        "sm:col-span-2 inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                        "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)] hover:bg-[rgba(34,40,50,1)] transition",
-                        submitting ? "opacity-60 cursor-not-allowed" : "",
-                        isPlaceholder ? "opacity-50 cursor-not-allowed" : "",
-                      ].join(" ")}
-                    >
-                      {isPlaceholder
-                        ? "Preview mode (disabled)"
-                        : submitting
-                          ? "Sending..."
-                          : "Send request"}
-                    </button>
-
-                    <p className="sm:col-span-2 text-xs text-ink-secondary">
-                      Reviews/requests are handled manually to prevent spam. ❤️
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Small side helper block (optional; keeps lower area balanced) */}
-              <aside className="lg:col-span-4">
-                <div className={softPanel("p-6")}>
-                  <div className="text-sm font-extrabold text-ink-primary">
-                    Quick checklist
-                  </div>
-                  <ul className="mt-3 space-y-2 text-sm text-ink-secondary">
-                    <li>• Pay the deposit using a method above.</li>
-                    <li>• Text/call immediately after payment.</li>
-                    <li>• Share your name + which puppy.</li>
-                    <li>• You’ll receive confirmation once reserved.</li>
-                  </ul>
-                </div>
-              </aside>
-            </div>
-          </>
-        )}
-      </div>
+      <style jsx global>{`
+        @keyframes woofSheen {
+          0% {
+            background-position: 0% 50%;
+            filter: saturate(1) brightness(1);
+          }
+          50% {
+            background-position: 100% 50%;
+            filter: saturate(1.05) brightness(1.03);
+          }
+          100% {
+            background-position: 0% 50%;
+            filter: saturate(1) brightness(1);
+          }
+        }
+      `}</style>
     </main>
   );
 }

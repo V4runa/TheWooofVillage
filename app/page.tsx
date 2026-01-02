@@ -33,9 +33,9 @@ const photoTitleStyle: React.CSSProperties = {
   // Readability: layered ink haze + micro edge + tiny “lift”
   textShadow:
     "0 24px 64px rgba(12,16,22,0.26), " + // big haze
-    "0 7px 20px rgba(12,16,22,0.16), " +  // medium anchor
-    "0 1px 2px rgba(12,16,22,0.18), " +   // micro edge
-    "0 -1px 0 rgba(255,235,210,0.18)",     // warm lift
+    "0 7px 20px rgba(12,16,22,0.16), " + // medium anchor
+    "0 1px 2px rgba(12,16,22,0.18), " + // micro edge
+    "0 -1px 0 rgba(255,235,210,0.18)", // warm lift
 };
 
 const photoBodyStyle: React.CSSProperties = {
@@ -60,7 +60,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-      <LandingHeader pupsAnchorId="pups" />
+      {/* ✅ CTA now navigates to /dogs (not the on-page section) */}
+      <LandingHeader
+        pupsAnchorId="pups"
+        cta={{ label: "View puppies →", href: "/dogs" }}
+      />
 
       <Container size="xl" className="pb-12 sm:pb-14 lg:pb-16">
         <section className="mt-8 sm:mt-10">

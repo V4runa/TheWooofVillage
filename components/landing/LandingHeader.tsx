@@ -9,13 +9,23 @@ import { useMerchantProfile } from "@/hooks/useMerchantProfile";
 
 type LandingHeaderProps = {
   pupsAnchorId?: string;
+
+  /**
+   * Controls the right-side CTA in the sticky header.
+   * - default: shows “View puppies →” linking to #pups
+   * - null: hides the CTA entirely
+   */
+  cta?: { label: string; href: string } | null;
 };
 
-export function LandingHeader({ pupsAnchorId = "pups" }: LandingHeaderProps) {
+export function LandingHeader({ pupsAnchorId = "pups", cta }: LandingHeaderProps) {
   const { profile, loading } = useMerchantProfile();
 
   const displayName = profile?.display_name?.trim() || "The Wooof Village";
   const tagline = profile?.tagline?.trim() || "Get your puppy today!";
+
+  const defaultCta = { label: "View puppies →", href: `#${pupsAnchorId}` };
+  const resolvedCta = cta === undefined ? defaultCta : cta; // allow null to hide
 
   // Temporary: semantic-safe “Link styled like a button” until Button supports asChild
   const linkButtonBase =
@@ -39,7 +49,7 @@ export function LandingHeader({ pupsAnchorId = "pups" }: LandingHeaderProps) {
       <div className="sticky top-0 z-50">
         {/* Cozy sticky bar: warm, readable, consistent with indoor theme */}
         <div className="relative overflow-hidden border-b border-amber-950/14 bg-[rgba(255,248,240,0.86)] shadow-[0_14px_34px_-26px_rgba(17,24,39,0.28)]">
-          {/* subtle brand accent (tiny, but makes it feel “designed”) */}
+          {/* subtle brand accent */}
           <div
             aria-hidden
             className="h-1 w-full bg-[linear-gradient(90deg,rgba(63,161,126,0.70)_0%,rgba(96,140,255,0.58)_55%,rgba(255,176,122,0.82)_118%)]"
@@ -47,9 +57,20 @@ export function LandingHeader({ pupsAnchorId = "pups" }: LandingHeaderProps) {
 
           <Container size="xl" className="py-3">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-3">
+              {/* ✅ Clickable “brand” (logo + name + tagline) */}
+              <Link
+                href="/"
+                aria-label="Go to home"
+                className={[
+                  "group flex min-w-0 items-center gap-3 rounded-2xl",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55",
+                  "focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(255,252,248,0.24)]",
+                  // subtle affordance without looking like a button
+                  "hover:opacity-[0.98]",
+                ].join(" ")}
+              >
                 {/* Logo plate */}
-                <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-amber-950/18 bg-[rgba(255,240,225,0.72)] ring-1 ring-inset ring-white/12 shadow-soft">
+                <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-amber-950/18 bg-[rgba(255,240,225,0.72)] ring-1 ring-inset ring-white/12 shadow-soft transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
                   <span className="text-xl" aria-hidden>
                     🐶
                   </span>
@@ -69,7 +90,7 @@ export function LandingHeader({ pupsAnchorId = "pups" }: LandingHeaderProps) {
                     {tagline}
                   </div>
                 </div>
-              </div>
+              </Link>
 
               {/* Social proof badges */}
               <div className="hidden md:flex items-center gap-2">
@@ -78,14 +99,17 @@ export function LandingHeader({ pupsAnchorId = "pups" }: LandingHeaderProps) {
                 <Badge variant="neutral">🫶 Small batches</Badge>
               </div>
 
-              <div className="shrink-0">
-                <Link
-                  href={`#${pupsAnchorId}`}
-                  className={[linkButtonBase, linkBtnSm, linkBtnControl].join(" ")}
-                >
-                  View puppies →
-                </Link>
-              </div>
+              {/* Optional CTA */}
+              {resolvedCta ? (
+                <div className="shrink-0">
+                  <Link
+                    href={resolvedCta.href}
+                    className={[linkButtonBase, linkBtnSm, linkBtnControl].join(" ")}
+                  >
+                    {resolvedCta.label}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </Container>
         </div>

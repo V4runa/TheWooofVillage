@@ -100,11 +100,11 @@ export function HomeHeroSlab({
 
   const linkBtnSecondary =
     "text-ink-primary " +
-    "bg-[rgba(255,246,238,0.78)] border border-amber-950/18 ring-1 ring-inset ring-white/12 " +
-    "shadow-[0_14px_34px_-18px_rgba(17,24,39,0.44)] " +
+    "bg-[rgba(255,250,244,0.88)] border border-amber-950/14 ring-1 ring-inset ring-white/20 " +
+    "shadow-[0_14px_34px_-18px_rgba(17,24,39,0.36)] " +
     "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl " +
     "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.18),transparent_62%)] before:opacity-55 " +
-    "hover:-translate-y-[1px] hover:bg-[rgba(255,246,238,0.86)] hover:border-amber-950/26 " +
+    "hover:-translate-y-[1px] hover:bg-[rgba(255,252,248,0.95)] hover:border-amber-950/22 " +
     "hover:shadow-[0_20px_48px_-22px_rgba(17,24,39,0.50)]";
 
   return (
@@ -121,7 +121,7 @@ export function HomeHeroSlab({
           <div className="grid gap-6 lg:grid-cols-12 lg:items-center">
             <div className="lg:col-span-4">
               {/* Warm eyebrow, but not muddy */}
-              <div className="text-[11px] font-black uppercase tracking-wider text-amber-900/70">
+              <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
                 Puppies available now
               </div>
 
@@ -149,7 +149,7 @@ export function HomeHeroSlab({
 
               {/* Small trust line (adds “airy clarity” + vibe) */}
               <div className="mt-4 text-xs font-semibold text-ink-secondary">
-                <span className="text-amber-900/70">Tip:</span>{" "}
+                <span className="text-amber-900/85">Tip:</span>{" "}
                 Tap a pup to see photos, details, and deposit options.
               </div>
             </div>
@@ -163,7 +163,7 @@ export function HomeHeroSlab({
               </div>
 
               {featured.length === 0 ? (
-                <div className="mt-4 rounded-3xl border border-amber-950/14 ring-1 ring-inset ring-white/12 bg-[rgba(255,246,238,0.70)] p-5 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.28)]">
+                <div className="mt-4 rounded-3xl border border-amber-950/12 ring-1 ring-inset ring-white/20 bg-[rgba(255,250,244,0.88)] p-5 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.24)]">
                   <div className="text-sm font-extrabold text-ink-primary">No puppies posted yet</div>
                   <div className="mt-1 text-sm text-ink-secondary">
                     Check back soon, or use contact below to ask what’s coming next.
@@ -175,13 +175,13 @@ export function HomeHeroSlab({
         </div>
 
         {/* BOTTOM: unified reserve band (warm but airy) */}
-        <div className="border-t border-amber-950/14 bg-[rgba(255,246,238,0.62)]">
+        <div className="border-t border-amber-950/12 bg-[rgba(255,250,244,0.82)]">
           <div className="grid gap-0 lg:grid-cols-12">
             {/* Contact */}
             <div className="lg:col-span-4 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-wider text-amber-900/70">
+                  <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
                     Contact
                   </div>
                   <div className="mt-1 text-sm text-ink-secondary">
@@ -222,7 +222,7 @@ export function HomeHeroSlab({
 
               {phone ? (
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs font-extrabold text-ink-primary bg-[rgba(255,246,238,0.78)] border border-amber-950/18 ring-1 ring-inset ring-white/12 rounded-xl px-3 py-2">
+                  <span className="text-xs font-extrabold text-ink-primary bg-[rgba(255,250,244,0.92)] border border-amber-950/14 ring-1 ring-inset ring-white/20 rounded-xl px-3 py-2">
                     {phone}
                   </span>
                   <Button
@@ -245,7 +245,7 @@ export function HomeHeroSlab({
             <div className="lg:col-span-6 p-5 border-t lg:border-t-0 lg:border-l border-amber-950/14">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-wider text-amber-900/70">
+                  <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
                     Deposit & Payment
                   </div>
                   <div className="mt-1 text-sm text-ink-secondary">
@@ -309,7 +309,7 @@ export function HomeHeroSlab({
 
             {/* Social */}
             <div className="lg:col-span-2 p-5 border-t lg:border-t-0 lg:border-l border-amber-950/14">
-              <div className="text-xs font-black uppercase tracking-wider text-amber-900/70">
+              <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
                 Social
               </div>
 
@@ -342,7 +342,7 @@ export function HomeHeroSlab({
       </Card>
 
       {toast ? (
-        <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[rgba(255,246,238,0.82)] px-4 py-2 text-sm font-extrabold text-ink-primary border border-amber-950/16 ring-1 ring-inset ring-white/12 shadow-[0_14px_34px_-22px_rgba(17,24,39,0.30)]">
+        <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[rgba(255,252,248,0.95)] px-4 py-2 text-sm font-extrabold text-ink-primary border border-amber-950/14 ring-1 ring-inset ring-white/20 shadow-[0_14px_34px_-22px_rgba(17,24,39,0.26)]">
           <span aria-hidden>✅</span>
           <span>{toast}</span>
         </div>

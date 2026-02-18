@@ -8,72 +8,11 @@ import { LandingHeader } from "@/components/landing/LandingHeader";
 import { DogTile } from "@/components/dogs/DogTile";
 
 import { useDogs } from "@/hooks/useDogs";
-import { getMockDogs } from "@/components/dogs/MockDogs";
+import { photoTitleStyle, photoBodyStyle, woofSheenKeyframes } from "@/lib/styles/landing";
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
-
-/* -----------------------------
-   Picsum fallback (stable seeds)
------------------------------- */
-function picsum(seed: string, w: number, h: number) {
-  const s = encodeURIComponent(seed || "puppy");
-  return `https://picsum.photos/seed/${s}/${w}/${h}`;
-}
-
-function ensureImages(dogs: Dog[], seedPrefix: string) {
-  return dogs.map((d, idx) => {
-    const has = Boolean(d.cover_image_url || d.images?.[0]?.url);
-    if (has) return d;
-
-    const seedBase = `${seedPrefix}-${d.slug || d.id || d.name || "pup"}-${idx}`;
-
-    return {
-      ...d,
-      cover_image_url: picsum(`${seedBase}-cover`, 1400, 900),
-      images:
-        d.images && d.images.length > 0
-          ? d.images
-          : ([
-              {
-                id: `ph-${seedBase}-1`,
-                dog_id: String(d.id),
-                url: picsum(`${seedBase}-img-1`, 1200, 900),
-                alt: d.name || "Puppy photo",
-                sort_order: 0,
-                created_at: new Date().toISOString(),
-              },
-            ] as any),
-    } as Dog;
-  });
-}
-
-/* -----------------------------
-   Header typography conventions
-   (match /app/page + testimonials)
------------------------------- */
-const photoTitleStyle: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow:
-    "0 24px 64px rgba(12,16,22,0.26), " +
-    "0 7px 20px rgba(12,16,22,0.16), " +
-    "0 1px 2px rgba(12,16,22,0.18), " +
-    "0 -1px 0 rgba(255,235,210,0.18)",
-};
-
-const photoBodyStyle: React.CSSProperties = {
-  color: "rgba(255, 236, 210, 0.86)",
-  textShadow:
-    "0 22px 58px rgba(12,16,22,0.24), " +
-    "0 6px 18px rgba(12,16,22,0.14), " +
-    "0 1px 2px rgba(12,16,22,0.16)",
-};
 
 /* -----------------------------
    Showroom grid (stable columns)
@@ -96,6 +35,7 @@ function ShowroomGrid({
     "gap-3 sm:gap-4 lg:gap-5",
     "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
     "2xl:grid-cols-4",
+    "items-stretch",
   ].join(" ");
 
   const skeletonCount = Math.min(safeCount || 12, 20);
@@ -107,13 +47,14 @@ function ShowroomGrid({
           <div
             key={i}
             className={[
-              "relative h-[252px] overflow-hidden rounded-3xl",
-              "bg-[linear-gradient(to_bottom,rgba(255,240,225,0.56),rgba(255,255,255,0.30))]",
-              "border border-amber-950/14 ring-1 ring-inset ring-white/12",
+              "relative w-full overflow-hidden rounded-3xl",
+              "bg-[linear-gradient(to_bottom,rgba(255,248,238,0.72),rgba(255,255,255,0.45))]",
+              "border border-amber-950/12 ring-1 ring-inset ring-white/20",
               "shadow-soft",
               "animate-pulse",
             ].join(" ")}
           >
+            <div className="aspect-[4/3]" />
             <span
               aria-hidden
               className="pointer-events-none absolute inset-0 opacity-55 bg-[radial-gradient(800px_240px_at_20%_0%,rgba(255,255,255,0.22),transparent_62%)]"
@@ -126,14 +67,14 @@ function ShowroomGrid({
 
   if (visible.length === 0) {
     return (
-      <div className="rounded-3xl border border-amber-950/14 ring-1 ring-inset ring-white/12 bg-[rgba(255,240,225,0.55)] p-6 shadow-soft">
-        <div className="text-[11px] font-black uppercase tracking-wider text-amber-900/70">
+      <div className="rounded-3xl border border-amber-950/12 ring-1 ring-inset ring-white/20 bg-[rgba(255,250,244,0.88)] p-6 shadow-soft">
+        <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
           Puppies
         </div>
         <div className="mt-2 text-lg font-extrabold text-amber-950">
           No puppies posted yet
         </div>
-        <div className="mt-2 text-sm leading-relaxed text-amber-900/75 max-w-[62ch]">
+        <div className="mt-2 text-sm leading-relaxed text-amber-900/85 max-w-[62ch]">
           New litters are posted as they’re ready. If you’re interested, use the contact
           options on the home page to ask what’s coming next.
         </div>
@@ -153,18 +94,17 @@ function ShowroomGrid({
 export default function DogsPage() {
   const { dogs, loading, error } = useDogs({ statuses: ["available"] });
 
-  const realCount = dogs?.length ?? 0;
+  const liveDogs = dogs ?? [];
+  const realCount = liveDogs.length;
   const hasRealDogs = realCount > 0;
 
   // litters: usually <= 12, sometimes up to 20
-  const count = hasRealDogs ? clamp(realCount, 1, 20) : 12;
+  const count = hasRealDogs ? clamp(realCount, 1, 20) : 0;
 
-  const baseDogs = hasRealDogs ? dogs.slice(0, count) : getMockDogs(12);
-
-  const showroomDogs = React.useMemo(() => {
-    const seedPrefix = hasRealDogs ? "real" : "mock";
-    return ensureImages(baseDogs, seedPrefix);
-  }, [baseDogs, hasRealDogs]);
+  const showroomDogs = React.useMemo(
+    () => liveDogs.slice(0, count),
+    [liveDogs, count]
+  );
 
   return (
     <main className="min-h-screen">
@@ -201,8 +141,6 @@ export default function DogsPage() {
                     style={photoBodyStyle}
                   >
                     Tap a puppy for photos, details, and deposit options.
-                    {!hasRealDogs &&
-                      " (Showing preview pups until listings are added.)"}
                   </p>
 
                 </div>
@@ -212,7 +150,7 @@ export default function DogsPage() {
                     className="text-xs leading-relaxed"
                     style={{ ...photoBodyStyle, opacity: 0.82 }}
                   >
-                    Couldn’t load live listings — showing preview placeholders. ({error})
+                    Couldn’t load live listings. ({error})
                   </p>
                 ) : null}
               </div>
@@ -260,22 +198,7 @@ export default function DogsPage() {
         </section>
       </Container>
 
-      <style jsx global>{`
-        @keyframes woofSheen {
-          0% {
-            background-position: 0% 50%;
-            filter: saturate(1) brightness(1);
-          }
-          50% {
-            background-position: 100% 50%;
-            filter: saturate(1.05) brightness(1.03);
-          }
-          100% {
-            background-position: 0% 50%;
-            filter: saturate(1) brightness(1);
-          }
-        }
-      `}</style>
+      <style jsx global>{woofSheenKeyframes}</style>
     </main>
   );
 }

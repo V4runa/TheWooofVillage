@@ -101,6 +101,11 @@ const config: Config = {
         large: "0 18px 44px rgba(24, 33, 46, 0.16)",
         ambient: "0 4px 14px rgba(24, 33, 46, 0.10)",
         glow: "0 0 28px rgba(79, 168, 143, 0.18)",
+        /** Admin shadow scale: clear separation from background at every level */
+        adminSm: "0 4px 14px rgba(0, 0, 0, 0.08)",
+        admin: "0 10px 32px rgba(0, 0, 0, 0.12)",
+        adminHover: "0 18px 48px rgba(0, 0, 0, 0.15)",
+        adminLg: "0 14px 40px rgba(0, 0, 0, 0.14)",
       },
 
       animation: {

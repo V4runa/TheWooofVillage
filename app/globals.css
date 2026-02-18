@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Exclude broken arbitrary variant that triggers CSS parse error (invalid selector) */
+@source not inline("[&>.sm\\:col-span-2]:sm:col-span-2");
+
 /* ---------------------------------------------
    Base document
 --------------------------------------------- */
@@ -13,9 +16,9 @@ body {
    Global tokens (bright + airy indoor warmth)
 --------------------------------------------- */
 :root {
-  /* warm charcoal instead of pure black */
-  --ink-primary: 34 40 50;
-  --ink-secondary: 76 90 110;
+  /* warm charcoal — readable on cream; slightly lighter secondary for hierarchy */
+  --ink-primary: 28 34 44;
+  --ink-secondary: 62 76 98;
 
   /* indoor palette */
   --tint-warm: 255 240 224; /* cream */
@@ -42,7 +45,7 @@ html {
   background-attachment: fixed;
 
   /* Keep it bright + airy indoors */
-  filter: brightness(1.06) saturate(1.03) contrast(1.03);
+  filter: brightness(1.08) saturate(1.04) contrast(1.02);
 }
 
 /**
@@ -63,9 +66,9 @@ html::before {
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.14) 0%,
-      rgba(255, 250, 244, 0.08) 42%,
-      rgba(255, 255, 255, 0.14) 100%
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 250, 244, 0.12) 42%,
+      rgba(255, 255, 255, 0.22) 100%
     );
 }
 
@@ -198,4 +201,52 @@ select {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---------------------------------------------
+   Admin area: rich UI, contrast, soul
+--------------------------------------------- */
+[data-admin="true"] {
+  --admin-ink: 17 24 39;   /* gray-900 */
+  --admin-muted: 75 85 99;  /* gray-600 */
+  font-size: 19px;
+}
+
+/* Subtle dot pattern for admin background depth */
+[data-admin="true"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+[data-admin="true"] .text-ink-primary {
+  color: rgb(var(--admin-ink));
+}
+
+[data-admin="true"] .text-ink-secondary {
+  color: rgb(var(--admin-muted));
+}
+
+/* Dashboard quick-access card toppers: guaranteed colors (not dependent on Tailwind purge) */
+[data-admin="true"] .admin-card-topper {
+  height: 0.625rem;   /* h-2.5 */
+  width: 100%;
+  flex-shrink: 0;
+  border-radius: 1rem 1rem 0 0; /* rounded-t-2xl */
+}
+[data-admin="true"] .admin-card-topper--meadow {
+  background: linear-gradient(to right, #2fb35f, #228d4a);  /* meadow-500 → meadow-600 */
+}
+[data-admin="true"] .admin-card-topper--sky {
+  background: linear-gradient(to right, #4f9cff, #2c79e6);   /* sky-500 → sky-600 */
+}
+[data-admin="true"] .admin-card-topper--sun {
+  background: linear-gradient(to right, #ff7f2a, #e65f14);    /* sun-500 → sun-600 */
+}
+[data-admin="true"] .admin-card-topper--stone {
+  background: linear-gradient(to right, #78716c, #57534e);    /* stone-500 → stone-600 */
 }

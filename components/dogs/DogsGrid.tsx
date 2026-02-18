@@ -22,7 +22,7 @@ export function DogsGrid({
    */
   const gridClass =
     [
-      "grid gap-4",
+      "grid gap-4 items-stretch",
       "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
       // 2xl+: auto-fit gives us a “more than 4” layout naturally without hardcoding 5/6/7
       "2xl:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]",
@@ -38,10 +38,10 @@ export function DogsGrid({
           <div
             key={i}
             className={[
-              "relative h-[260px] overflow-hidden rounded-3xl",
+              "relative w-full overflow-hidden rounded-3xl h-full flex flex-col",
               // cozy surface (not bright white)
-              "bg-[linear-gradient(to_bottom,rgba(255,240,225,0.56),rgba(255,255,255,0.30))]",
-              "border border-amber-950/14 ring-1 ring-inset ring-white/12",
+              "bg-[linear-gradient(to_bottom,rgba(255,248,238,0.72),rgba(255,255,255,0.45))]",
+              "border border-amber-950/12 ring-1 ring-inset ring-white/20",
               "shadow-soft",
               "animate-pulse",
             ].join(" ")}
@@ -62,14 +62,14 @@ export function DogsGrid({
 
   if (visible.length === 0) {
     return (
-      <div className="rounded-3xl border border-amber-950/14 ring-1 ring-inset ring-white/12 bg-[rgba(255,240,225,0.55)] p-6 shadow-soft">
-        <div className="text-[11px] font-black uppercase tracking-wider text-amber-900/70">
+      <div className="rounded-3xl border border-amber-950/12 ring-1 ring-inset ring-white/20 bg-[rgba(255,250,244,0.88)] p-6 shadow-soft">
+        <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
           Puppies
         </div>
         <div className="mt-2 text-lg font-extrabold text-amber-950">
           No puppies posted yet
         </div>
-        <div className="mt-2 text-sm leading-relaxed text-amber-900/75 max-w-[62ch]">
+        <div className="mt-2 text-sm leading-relaxed text-amber-900/85 max-w-[62ch]">
           New litters are posted as they’re ready. If you’re interested, use the contact
           options above to ask what’s coming next.
         </div>

@@ -40,15 +40,15 @@ export function LandingHeader({ pupsAnchorId = "pups", cta }: LandingHeaderProps
 
   const linkBtnControl =
     "text-amber-950 " +
-    "bg-[rgba(255,240,225,0.78)] border border-amber-950/20 ring-1 ring-inset ring-white/12 " +
-    "shadow-[0_14px_34px_-22px_rgba(17,24,39,0.46)] " +
-    "hover:bg-[rgba(255,240,225,0.88)] hover:border-amber-950/28 hover:shadow-[0_20px_48px_-26px_rgba(17,24,39,0.52)]";
+    "bg-[rgba(255,246,235,0.92)] border border-amber-950/18 ring-1 ring-inset ring-white/20 " +
+    "shadow-[0_14px_34px_-22px_rgba(17,24,39,0.38)] " +
+    "hover:bg-[rgba(255,248,242,0.98)] hover:border-amber-950/24 hover:shadow-[0_20px_48px_-26px_rgba(17,24,39,0.42)]";
 
   return (
     <header className="w-full">
       <div className="sticky top-0 z-50">
         {/* Cozy sticky bar: warm, readable, consistent with indoor theme */}
-        <div className="relative overflow-hidden border-b border-amber-950/14 bg-[rgba(255,248,240,0.86)] shadow-[0_14px_34px_-26px_rgba(17,24,39,0.28)]">
+        <div className="relative overflow-hidden border-b border-amber-950/12 bg-[rgba(255,252,248,0.95)] shadow-[0_14px_34px_-26px_rgba(17,24,39,0.22)]">
           {/* subtle brand accent */}
           <div
             aria-hidden
@@ -70,7 +70,7 @@ export function LandingHeader({ pupsAnchorId = "pups", cta }: LandingHeaderProps
                 ].join(" ")}
               >
                 {/* Logo plate */}
-                <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-amber-950/18 bg-[rgba(255,240,225,0.72)] ring-1 ring-inset ring-white/12 shadow-soft transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
+                <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-amber-950/14 bg-[rgba(255,248,238,0.92)] ring-1 ring-inset ring-white/20 shadow-soft transition-transform duration-200 ease-out group-hover:-translate-y-[1px]">
                   <span className="text-xl" aria-hidden>
                     🐶
                   </span>
@@ -86,7 +86,7 @@ export function LandingHeader({ pupsAnchorId = "pups", cta }: LandingHeaderProps
                   <div className="truncate text-base sm:text-lg font-extrabold text-amber-950">
                     {loading ? "Loading…" : displayName}
                   </div>
-                  <div className="truncate text-xs sm:text-sm font-semibold text-amber-900/70">
+                  <div className="truncate text-xs sm:text-sm font-semibold text-amber-900/85">
                     {tagline}
                   </div>
                 </div>

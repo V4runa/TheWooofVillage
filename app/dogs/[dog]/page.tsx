@@ -27,7 +27,11 @@ function formatDate(dateStr?: string | null) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function buildDogWithImages(row: DogRow, images: DogImage[]): Dog {
@@ -62,63 +66,6 @@ async function copyToClipboard(text: string) {
   } catch {
     return false;
   }
-}
-
-/* -----------------------------
-   Placeholder dog (design mode)
------------------------------- */
-function picsum(seed: string, w: number, h: number) {
-  const s = encodeURIComponent(seed);
-  return `https://picsum.photos/seed/${s}/${w}/${h}`;
-}
-
-function titleFromSlug(slug: string) {
-  const clean = slug.replace(/[-_]+/g, " ").trim();
-  if (!clean) return "Puppy";
-  return clean
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
-
-function buildPlaceholderDog(dogParam: string): Dog {
-  const seedBase = dogParam || "placeholder";
-  const name = titleFromSlug(seedBase);
-
-  const cover = picsum(`${seedBase}-cover`, 1800, 1200);
-
-  const gallery = Array.from({ length: 7 }).map((_, i) => {
-    const url = picsum(`${seedBase}-img-${i + 1}`, 1200, 900);
-    return {
-      id: `ph-${seedBase}-${i + 1}`,
-      dog_id: `placeholder-${seedBase}`,
-      url,
-      alt: `${name} photo ${i + 1}`,
-      sort_order: i,
-      created_at: new Date().toISOString(),
-    } as DogImage;
-  });
-
-  return {
-    id: `placeholder-${seedBase}`,
-    slug: seedBase,
-    name,
-    description:
-      "A sweet, curious puppy with a gentle temperament. This is placeholder copy so we can judge spacing, rhythm, and readability for the detail page layout.",
-    status: "available",
-    deposit_amount_cents: 30000,
-    price_amount_cents: 180000,
-    cover_image_url: cover,
-    breed: "Mini Goldendoodle (placeholder)",
-    sex: "Female",
-    age_weeks: 10,
-    color: "Apricot",
-    ready_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
-    sort_order: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    images: gallery,
-  } as unknown as Dog;
 }
 
 /* -----------------------------
@@ -210,14 +157,18 @@ export default function DogDetailPage() {
   const [draftMessage, setDraftMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const deposit = useMemo(() => moneyFromCents(dog?.deposit_amount_cents), [dog?.deposit_amount_cents]);
-  const price = useMemo(() => moneyFromCents(dog?.price_amount_cents), [dog?.price_amount_cents]);
+  const deposit = useMemo(
+    () => moneyFromCents(dog?.deposit_amount_cents),
+    [dog?.deposit_amount_cents]
+  );
+  const price = useMemo(
+    () => moneyFromCents(dog?.price_amount_cents),
+    [dog?.price_amount_cents]
+  );
 
   const images = useMemo(() => allImages(dog), [dog]);
   const primary = useMemo(() => bestPrimaryImage(dog), [dog]);
   const selected = selectedImage || primary;
-
-  const isPlaceholder = Boolean(dog?.id && String(dog.id).startsWith("placeholder-"));
 
   const phone = merchant?.phone?.trim() || null;
   const smsHref = phone ? `sms:${phone}` : null;
@@ -306,9 +257,8 @@ export default function DogDetailPage() {
       else setMerchant(null);
 
       if (!dogRow) {
-        const ph = buildPlaceholderDog(dogParam);
-        setDog(ph);
-        setSelectedImage(ph.cover_image_url || ph.images?.[0]?.url || null);
+        setDog(null);
+        setSelectedImage(null);
         setLoading(false);
         setError(null);
         return;
@@ -325,14 +275,7 @@ export default function DogDetailPage() {
       if (!alive) return;
 
       const imagesSafe = imgErr ? [] : imgData ?? [];
-      let full = buildDogWithImages(dogRow, imagesSafe);
-
-      const hasAnyImage = Boolean(full.cover_image_url || full.images?.length);
-      if (!hasAnyImage) {
-        const seed = full.slug || full.id || dogParam;
-        const ph = buildPlaceholderDog(String(seed));
-        full = { ...full, cover_image_url: ph.cover_image_url, images: ph.images } as Dog;
-      }
+      const full = buildDogWithImages(dogRow, imagesSafe);
 
       setDog(full);
       setSelectedImage(full.cover_image_url || full.images?.[0]?.url || null);
@@ -350,11 +293,6 @@ export default function DogDetailPage() {
 
   async function submitReservationRequest() {
     if (!dog) return;
-
-    if (isPlaceholder) {
-      setNote("Preview pup: add real listings to enable reservation requests.");
-      return;
-    }
 
     const buyer_name = draftName.trim();
     const buyer_phone = draftPhone.trim();
@@ -378,22 +316,33 @@ export default function DogDetailPage() {
       note: draftMessage.trim() ? draftMessage.trim() : null,
     };
 
-    const { error } = await supabase.from("reservation_requests").insert(payload);
+    try {
+      const res = await fetch("/api/public/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (error) {
-      setNote(error.message);
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json?.ok) {
+        setNote(json?.error || "Could not submit reservation request.");
+        setSubmitting(false);
+        return;
+      }
+
+      setNote("Request sent. Text or call to confirm your reservation.");
       setSubmitting(false);
-      return;
+
+      setDraftName("");
+      setDraftPhone("");
+      setDraftMethod("");
+      setDraftTxn("");
+      setDraftMessage("");
+    } catch (e: any) {
+      setNote(e?.message || "Could not submit reservation request.");
+      setSubmitting(false);
     }
-
-    setNote("Request sent. Text or call to confirm your reservation.");
-    setSubmitting(false);
-
-    setDraftName("");
-    setDraftPhone("");
-    setDraftMethod("");
-    setDraftTxn("");
-    setDraftMessage("");
   }
 
   // Equal height on desktop
@@ -408,15 +357,18 @@ export default function DogDetailPage() {
         <section className="mt-8 sm:mt-10">
           <div className="max-w-[86ch]">
             <div className="flex items-center gap-3">
-
               {dog?.status ? (
                 <span className={subtlePill()}>
-                  Status: <span className="font-extrabold text-ink-primary">{dog.status}</span>
+                  Status:{" "}
+                  <span className="font-extrabold text-ink-primary">{dog.status}</span>
                 </span>
               ) : null}
             </div>
 
-            <h1 className="mt-5 text-2xl sm:text-3xl font-extrabold tracking-tight" style={photoTitleStyle}>
+            <h1
+              className="mt-5 text-2xl sm:text-3xl font-extrabold tracking-tight"
+              style={photoTitleStyle}
+            >
               {loading ? "Loading puppy…" : dog?.name ?? "Puppy details"}
             </h1>
 
@@ -432,7 +384,6 @@ export default function DogDetailPage() {
 
             <p className="mt-3 text-sm sm:text-base leading-relaxed" style={photoBodyStyle}>
               Tap photos, review details, then reserve with a deposit and a quick text/call.
-              {isPlaceholder && " (Preview pup for design testing.)"}
             </p>
 
             {note ? (
@@ -442,14 +393,17 @@ export default function DogDetailPage() {
             ) : null}
 
             {error ? (
-              <p className="mt-2 text-xs leading-relaxed" style={{ ...photoBodyStyle, opacity: 0.82 }}>
-                Couldn’t load database images — showing placeholders. ({error})
+              <p
+                className="mt-2 text-xs leading-relaxed"
+                style={{ ...photoBodyStyle, opacity: 0.82 }}
+              >
+                Couldn’t load some database images. ({error})
               </p>
             ) : null}
           </div>
         </section>
 
-        {/* Fade container starts at hero image (exactly as requested) */}
+        {/* Fade container starts at hero image */}
         <section className="mt-7 sm:mt-8 lg:mt-10">
           <div className="relative">
             {/* ambient glow layer */}
@@ -464,7 +418,7 @@ export default function DogDetailPage() {
               }}
             />
 
-            {/* showroom shell (like Dogs page) */}
+            {/* showroom shell */}
             <div
               className={[
                 "relative rounded-[44px]",
@@ -492,18 +446,22 @@ export default function DogDetailPage() {
                   <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 lg:items-stretch">
                     {/* Left: gallery */}
                     <section className="lg:col-span-8">
-                      <div className={softPanel(["overflow-hidden", heroHeight].join(" "))}>
-                        <div className="relative h-[360px] sm:h-[480px] lg:h-[520px]">
-                          {selected ? (
-                            <img
-                              src={selected}
-                              alt={dog.name}
-                              className="h-full w-full object-cover"
-                              loading="eager"
-                            />
-                          ) : (
-                            <div className="h-full w-full bg-black/10" />
-                          )}
+                      <div className={softPanel("overflow-hidden")}>
+                        <div className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+                          <div className="aspect-[4/3] lg:aspect-[3/2] flex items-center justify-center">
+                            {selected ? (
+                              <img
+                                src={selected}
+                                alt={dog.name}
+                                className="max-h-full max-w-full w-auto h-auto object-contain"
+                                loading="eager"
+                              />
+                            ) : (
+                              <div className="text-sm font-semibold text-amber-950/85">
+                                No photo available
+                              </div>
+                            )}
+                          </div>
 
                           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                             <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
@@ -511,7 +469,8 @@ export default function DogDetailPage() {
                             </span>
                             {images.length > 0 ? (
                               <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-ink-secondary border border-amber-950/10">
-                                {Math.max(1, images.findIndex((i) => i.url === selected) + 1)}/{images.length}
+                                {Math.max(1, images.findIndex((i) => i.url === selected) + 1)}/
+                                {images.length}
                               </span>
                             ) : null}
                           </div>
@@ -531,12 +490,19 @@ export default function DogDetailPage() {
                                     key={img.url}
                                     onClick={() => setSelectedImage(img.url)}
                                     className={[
-                                      "shrink-0 overflow-hidden rounded-2xl ring-1 transition",
+                                      "shrink-0 relative overflow-hidden rounded-2xl ring-1 transition bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]",
                                       active ? "ring-black/25" : "ring-black/10 hover:ring-black/18",
                                     ].join(" ")}
                                     aria-label="Select image"
                                   >
-                                    <img src={img.url} alt={img.alt} className="h-20 w-28 object-cover" loading="lazy" />
+                                    <div className="aspect-[4/3] w-28 flex items-center justify-center">
+                                      <img
+                                        src={img.url}
+                                        alt={img.alt}
+                                        className="max-h-full max-w-full w-auto h-auto object-contain"
+                                        loading="lazy"
+                                      />
+                                    </div>
                                   </button>
                                 );
                               })}
@@ -564,11 +530,13 @@ export default function DogDetailPage() {
                           {dog.ready_date ? (
                             <div className="mt-2 text-sm text-ink-secondary">
                               Ready:{" "}
-                              <span className="font-extrabold text-ink-primary">{formatDate(dog.ready_date)}</span>
+                              <span className="font-extrabold text-ink-primary">
+                                {formatDate(dog.ready_date)}
+                              </span>
                             </div>
                           ) : null}
 
-                          {(deposit || price) ? (
+                          {deposit || price ? (
                             <div className="mt-5 flex flex-wrap gap-2">
                               {deposit ? (
                                 <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-ink-primary border border-emerald-950/10">
@@ -587,17 +555,22 @@ export default function DogDetailPage() {
                         <div className="mt-5 flex-1 overflow-hidden">
                           <div className="h-full overflow-y-auto pr-1">
                             {dog.description ? (
-                              <p className="text-sm leading-relaxed text-ink-secondary">{dog.description}</p>
+                              <p className="text-sm leading-relaxed text-ink-secondary">
+                                {dog.description}
+                              </p>
                             ) : null}
 
-                            {/* Reserve block: single calm panel (no extra sections) */}
+                            {/* Reserve block */}
                             <div className="mt-5 rounded-2xl bg-white/60 p-4 border border-amber-950/10">
-                              <div className="text-sm font-extrabold text-ink-primary">Reserve this puppy</div>
+                              <div className="text-sm font-extrabold text-ink-primary">
+                                Reserve this puppy
+                              </div>
                               <p className="mt-2 text-sm text-ink-secondary leading-relaxed">
-                                Send the deposit using one of the methods below, then text/call to confirm.
+                                Send the deposit using one of the methods below, then text/call to
+                                confirm.
                               </p>
 
-                              {/* Payment rows (minimal + consistent) */}
+                              {/* Payment rows */}
                               <div className="mt-4 space-y-2">
                                 {merchant?.venmo_url ? (
                                   <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
@@ -687,8 +660,12 @@ export default function DogDetailPage() {
                                         {payGlyph("zelle")}
                                       </span>
                                       <div className="min-w-0">
-                                        <div className="text-sm font-semibold text-ink-primary">Zelle</div>
-                                        <div className="truncate text-xs text-ink-secondary">{merchant.zelle_recipient}</div>
+                                        <div className="text-sm font-semibold text-ink-primary">
+                                          Zelle
+                                        </div>
+                                        <div className="truncate text-xs text-ink-secondary">
+                                          {merchant.zelle_recipient}
+                                        </div>
                                       </div>
                                     </div>
                                     <button
@@ -704,7 +681,7 @@ export default function DogDetailPage() {
                                 ) : null}
                               </div>
 
-                              {/* Primary actions (same vibe as existing buttons) */}
+                              {/* Primary actions */}
                               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                                 <a
                                   href={smsHref ?? undefined}
@@ -731,7 +708,7 @@ export default function DogDetailPage() {
                                 </a>
                               </div>
 
-                              {/* Optional request (kept minimal, not a second section) */}
+                              {/* Optional request */}
                               <div className="mt-4">
                                 <div className="text-xs font-semibold text-ink-secondary">
                                   Optional: send a quick request
@@ -770,16 +747,15 @@ export default function DogDetailPage() {
                                   />
 
                                   <button
-                                    disabled={submitting || isPlaceholder}
+                                    disabled={submitting}
                                     onClick={submitReservationRequest}
                                     className={[
                                       "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
                                       "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)] hover:bg-[rgba(34,40,50,1)] transition",
                                       submitting ? "opacity-60 cursor-not-allowed" : "",
-                                      isPlaceholder ? "opacity-50 cursor-not-allowed" : "",
                                     ].join(" ")}
                                   >
-                                    {isPlaceholder ? "Preview mode (disabled)" : submitting ? "Sending..." : "Send request"}
+                                    {submitting ? "Sending..." : "Send request"}
                                   </button>
                                 </div>
                               </div>

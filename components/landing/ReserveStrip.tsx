@@ -36,7 +36,7 @@ export function ReserveStrip() {
       </div>
 
       {toast ? (
-        <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md px-4 py-2 text-sm font-extrabold text-ink-primary border border-black/5 ring-1 ring-black/5 shadow-soft">
+        <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[rgba(255,252,248,0.95)] backdrop-blur-md px-4 py-2 text-sm font-extrabold text-ink-primary border border-amber-950/12 ring-1 ring-inset ring-white/20 shadow-soft">
           <span className="text-base" aria-hidden>
             ✅
           </span>

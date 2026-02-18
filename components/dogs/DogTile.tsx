@@ -53,11 +53,11 @@ export function DogTile({ dog, dense = true }: Props) {
   const price = moneyFromCents(dog.price_amount_cents);
 
   return (
-    <Link href={href} className="block">
+    <Link href={href} className="block h-full">
       <Card
         variant="surface"
         className={[
-          "group overflow-hidden",
+          "group overflow-hidden h-full flex flex-col",
           "border border-amber-950/18",
           "transition-[transform,box-shadow,border-color] duration-200 ease-out",
           "hover:-translate-y-[1.5px] hover:shadow-large hover:border-amber-950/28",
@@ -70,31 +70,29 @@ export function DogTile({ dog, dense = true }: Props) {
         />
 
         {/* Image */}
-        <div className="relative w-full overflow-hidden">
-          <div className={dense ? "aspect-[16/10]" : "aspect-[4/3]"} />
+        <div className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+          <div className="aspect-[4/3] flex items-center justify-center">
+            {img ? (
+              <>
+                <img
+                  src={img}
+                  alt={dog.name}
+                  loading="lazy"
+                  className="max-h-full max-w-full w-auto h-auto object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                />
 
-          {img ? (
-            <>
-              <img
-                src={img}
-                alt={dog.name}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-              />
-
-              {/* Richer cozy overlay */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_90%_at_50%_12%,rgba(255,232,210,0.22),transparent_55%),linear-gradient(to_top,rgba(0,0,0,0.32),transparent_58%)]"
-              />
-            </>
-          ) : (
-            <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
-              <div className="text-sm font-semibold text-amber-950/75">
+                {/* Richer cozy overlay */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_90%_at_50%_12%,rgba(255,232,210,0.22),transparent_55%),linear-gradient(to_top,rgba(0,0,0,0.32),transparent_58%)]"
+                />
+              </>
+            ) : (
+              <div className="text-sm font-semibold text-amber-950/85">
                 No photo yet
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Status badge plate */}
           <div className="absolute left-3 top-3">
@@ -111,6 +109,7 @@ export function DogTile({ dog, dense = true }: Props) {
           className={[
             dense ? "p-4" : "p-5",
             "bg-[linear-gradient(to_bottom,rgba(255,240,225,0.72),rgba(255,255,255,0.46))]",
+            "flex-1 flex flex-col",
           ].join(" ")}
         >
           <div className="min-w-0">
@@ -126,7 +125,7 @@ export function DogTile({ dog, dense = true }: Props) {
             ) : null}
           </div>
 
-          <p className="mt-2 line-clamp-1 text-sm text-amber-900/75">
+          <p className="mt-2 line-clamp-1 text-sm text-amber-900/85">
             {dog.description || "Tap for photos, details, and deposit options."}
           </p>
 

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
 import { useTestimonials } from "@/hooks/useTestimonials";
 import type { Testimonial } from "@/types/testimonials";
 
@@ -44,13 +43,6 @@ function firstImage(t: Testimonial) {
   return t.images?.[0]?.url || null;
 }
 
-/**
- * Header signature (same language as Puppies header):
- * - Gradient ink title
- * - Subtle animated sheen rule
- *
- * Note: CTA button is NOT “on-photo” — it’s a normal control, so it uses ink text.
- */
 const titleInkStyle: React.CSSProperties = {
   backgroundImage:
     "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
@@ -106,14 +98,11 @@ export function TestimonialsSection() {
     setSubmitErr(null);
 
     const payload = {
-      status: "pending",
       author_name: draft.author_name.trim(),
-      author_location: draft.author_location.trim()
-        ? draft.author_location.trim()
-        : null,
+      author_location: draft.author_location.trim(),
       rating: draft.rating ? clamp(draft.rating, 1, 5) : null,
       message: draft.message.trim(),
-      dog_id: null as string | null,
+      photo_url: draft.photo_url.trim(),
     };
 
     if (!payload.author_name) {
@@ -127,54 +116,42 @@ export function TestimonialsSection() {
 
     setSubmitting(true);
 
-    const { data: inserted, error: insertErr } = await supabase
-      .from("testimonials")
-      .insert(payload)
-      .select("id")
-      .single();
-
-    if (insertErr) {
-      setSubmitting(false);
-      setSubmitErr(insertErr.message);
-      return;
-    }
-
-    const photoUrl = draft.photo_url.trim();
-    if (photoUrl) {
-      const { error: imgErr } = await supabase.from("testimonial_images").insert({
-        testimonial_id: inserted.id,
-        url: photoUrl,
-        alt: `${payload.author_name}'s photo`,
-        sort_order: 0,
+    try {
+      const res = await fetch("/api/public/testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (imgErr) {
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json?.ok) {
         setSubmitting(false);
-        setSubmitOk(
-          "Thanks! Your review was submitted. (Your photo link couldn’t be saved—no worries.)"
-        );
-        setDraft({
-          author_name: "",
-          author_location: "",
-          rating: 5,
-          message: "",
-          photo_url: "",
-        });
+        setSubmitErr(json?.error || "Could not submit review.");
         return;
       }
+
+      setSubmitting(false);
+
+      if (json?.warning) {
+        setSubmitOk(String(json.warning));
+      } else {
+        setSubmitOk("Thanks! Your review was submitted and will appear once approved.");
+      }
+
+      setDraft({
+        author_name: "",
+        author_location: "",
+        rating: 5,
+        message: "",
+        photo_url: "",
+      });
+
+      await refetch();
+    } catch (e: any) {
+      setSubmitting(false);
+      setSubmitErr(e?.message || "Could not submit review.");
     }
-
-    setSubmitting(false);
-    setSubmitOk("Thanks! Your review was submitted and will appear once approved.");
-    setDraft({
-      author_name: "",
-      author_location: "",
-      rating: 5,
-      message: "",
-      photo_url: "",
-    });
-
-    await refetch();
   }
 
   return (
@@ -215,7 +192,6 @@ export function TestimonialsSection() {
           </div>
         </div>
 
-        {/* CTA is a normal UI control — darker tone + ink label (no white text). */}
         <button
           onClick={() => {
             setSubmitOk(null);
@@ -230,7 +206,6 @@ export function TestimonialsSection() {
             "hover:shadow-[0_18px_54px_-30px_rgba(17,24,39,0.56)]",
           ].join(" ")}
           style={{
-            // warm “elevated” control, slightly darker than cards but not harsh
             background:
               "linear-gradient(180deg, rgba(255,240,224,0.92) 0%, rgba(255,232,214,0.84) 100%)",
             color: "rgb(34 40 50)",
@@ -246,7 +221,7 @@ export function TestimonialsSection() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-3xl bg-[rgba(255,248,242,0.78)] p-5 ring-1 ring-inset ring-white/12 border border-amber-950/14 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.28)]"
+                className="rounded-3xl bg-[rgba(255,252,248,0.90)] p-5 ring-1 ring-inset ring-white/20 border border-amber-950/12 shadow-[0_12px_34px_-22px_rgba(17,24,39,0.24)]"
               >
                 <div className="h-4 w-1/2 rounded bg-black/10 animate-pulse" />
                 <div className="mt-3 h-16 rounded bg-black/10 animate-pulse" />
@@ -277,7 +252,7 @@ export function TestimonialsSection() {
                   key={t.id}
                   className={[
                     "group overflow-hidden rounded-3xl",
-                    "bg-[rgba(255,248,242,0.80)] border border-amber-950/14 ring-1 ring-inset ring-white/12",
+                    "bg-[rgba(255,252,248,0.92)] border border-amber-950/12 ring-1 ring-inset ring-white/20",
                     "shadow-[0_12px_34px_-22px_rgba(17,24,39,0.26)]",
                     "transition-transform duration-200",
                     "hover:-translate-y-[2px]",
@@ -325,7 +300,6 @@ export function TestimonialsSection() {
         )}
       </div>
 
-      {/* Modal (kept as-is) */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <button
@@ -334,7 +308,7 @@ export function TestimonialsSection() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-[rgba(255,248,242,0.92)] p-6 border border-amber-950/14 ring-1 ring-inset ring-white/12 shadow-[0_18px_52px_-26px_rgba(17,24,39,0.44)]">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-[rgba(255,252,248,0.98)] p-6 border border-amber-950/12 ring-1 ring-inset ring-white/20 shadow-[0_18px_52px_-26px_rgba(17,24,39,0.36)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xl font-extrabold text-ink-primary">Leave a review</div>
@@ -345,7 +319,7 @@ export function TestimonialsSection() {
 
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-full px-3 py-1 text-sm font-extrabold border border-amber-950/18 bg-[rgba(255,240,225,0.72)] hover:bg-[rgba(255,240,225,0.82)]"
+                className="rounded-full px-3 py-1 text-sm font-extrabold border border-amber-950/18 bg-[rgba(255,248,238,0.92)] hover:bg-[rgba(255,252,248,0.98)]"
               >
                 ✕
               </button>
@@ -356,7 +330,7 @@ export function TestimonialsSection() {
                 value={draft.author_name}
                 onChange={(e) => setDraft((d) => ({ ...d, author_name: e.target.value }))}
                 placeholder="Your name *"
-                className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
               />
 
               <input
@@ -365,7 +339,7 @@ export function TestimonialsSection() {
                   setDraft((d) => ({ ...d, author_location: e.target.value }))
                 }
                 placeholder="City / State (optional)"
-                className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
               />
 
               <div className="grid gap-2">
@@ -380,7 +354,7 @@ export function TestimonialsSection() {
                         "rounded-full px-3 py-2 text-sm font-extrabold border transition",
                         draft.rating === n
                           ? "bg-[rgba(34,40,50,0.92)] text-white border-black/10"
-                          : "bg-[rgba(255,240,225,0.72)] text-ink-primary border-amber-950/18 hover:border-amber-950/28",
+                          : "bg-[rgba(255,248,238,0.92)] text-ink-primary border-amber-950/18 hover:border-amber-950/24",
                       ].join(" ")}
                     >
                       {n}★
@@ -393,14 +367,14 @@ export function TestimonialsSection() {
                 value={draft.message}
                 onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))}
                 placeholder="Write your message *"
-                className="min-h-[120px] w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                className="min-h-[120px] w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
               />
 
               <input
                 value={draft.photo_url}
                 onChange={(e) => setDraft((d) => ({ ...d, photo_url: e.target.value }))}
                 placeholder="Photo URL (optional for now)"
-                className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
               />
 
               {submitErr && (
@@ -417,7 +391,7 @@ export function TestimonialsSection() {
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 <button
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold bg-[rgba(255,240,225,0.72)] border border-amber-950/18 hover:bg-[rgba(255,240,225,0.82)] transition"
+                  className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold bg-[rgba(255,248,238,0.92)] border border-amber-950/18 hover:bg-[rgba(255,252,248,0.98)] transition"
                 >
                   Cancel
                 </button>

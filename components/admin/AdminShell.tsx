@@ -198,9 +198,9 @@ export function AdminShell({
               </div>
             )}
 
-            {/* Main card */}
+            {/* Main card — content scrolls when tall (e.g. merchant profile) so Save is reachable on all screens */}
             <div className={`${softShell("flex min-h-0 flex-1 flex-col overflow-hidden p-0 shadow-adminLg ring-1 ring-black/5")} flex flex-col`}>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl p-6 sm:p-8">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-b-2xl p-6 sm:p-8">
                 {children}
               </div>
             </div>

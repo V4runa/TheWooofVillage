@@ -46,9 +46,16 @@ export const ADMIN_TOPPER_STYLES: Record<AdminTopperAccent, { background: string
 };
 
 export function btn(kind: "primary" | "muted" | "danger") {
+  const adminClass =
+    kind === "primary"
+      ? "btn-admin-primary"
+      : kind === "danger"
+        ? "btn-admin-danger"
+        : "btn-admin-muted";
   if (kind === "primary") {
     return [
       btnBase,
+      adminClass,
       "bg-gradient-to-r from-meadow-600 to-meadow-700 text-white shadow-admin hover:shadow-adminHover",
       "hover:from-meadow-500 hover:to-meadow-600 hover:-translate-y-0.5",
       "active:from-meadow-700 active:to-meadow-800 active:translate-y-0",
@@ -57,12 +64,14 @@ export function btn(kind: "primary" | "muted" | "danger") {
   if (kind === "danger") {
     return [
       btnBase,
+      adminClass,
       "bg-white text-red-700 ring-2 ring-red-200",
       "hover:bg-red-50 hover:ring-red-300 hover:shadow-admin",
     ].join(" ");
   }
   return [
     btnBase,
+    adminClass,
     "bg-stone-50 text-gray-900 ring-2 ring-stone-200",
     "hover:bg-meadow-50 hover:ring-meadow-200 hover:text-meadow-900 hover:shadow-admin",
   ].join(" ");

@@ -212,6 +212,72 @@ select {
   font-size: 19px;
 }
 
+/* Guarantee admin buttons are always visible (avoid inherit making text disappear) */
+[data-admin="true"] button {
+  cursor: pointer;
+}
+[data-admin="true"] button.btn-admin-primary {
+  background: linear-gradient(to right, #059669, #047857) !important;
+  color: #fff !important;
+  border: 2px solid #065f46 !important;
+}
+[data-admin="true"] button.btn-admin-primary:hover:not(:disabled) {
+  background: linear-gradient(to right, #10b981, #059669) !important;
+  color: #fff !important;
+}
+[data-admin="true"] button.btn-admin-muted {
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  border: 2px solid #9ca3af !important;
+}
+[data-admin="true"] button.btn-admin-muted:hover:not(:disabled) {
+  background: #d1d5db !important;
+  color: #111827 !important;
+  border-color: #6b7280 !important;
+}
+[data-admin="true"] button.btn-admin-danger {
+  background: #fff !important;
+  color: #b91c1c !important;
+  border: 2px solid #fca5a5 !important;
+}
+[data-admin="true"] button.btn-admin-danger:hover:not(:disabled) {
+  background: #fef2f2 !important;
+  border-color: #f87171 !important;
+}
+
+/* Admin icon-only primary button (update / save): circular, soft shadow, clear icon */
+[data-admin="true"] button.btn-admin-icon-primary {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(145deg, #059669, #047857) !important;
+  color: #fff !important;
+  border: 2px solid #065f46 !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+[data-admin="true"] button.btn-admin-icon-primary:hover:not(:disabled) {
+  background: linear-gradient(145deg, #10b981, #059669) !important;
+  color: #fff !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4) !important;
+  transform: translateY(-1px);
+}
+[data-admin="true"] button.btn-admin-icon-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3) !important;
+}
+[data-admin="true"] button.btn-admin-icon-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Subtle dot pattern for admin background depth */
 [data-admin="true"]::before {
   content: "";

@@ -74,6 +74,7 @@ export function DogsPanel({ onToast }: Props) {
   const [cAlt, setCAlt] = React.useState<string>("");
   const [cFiles, setCFiles] = React.useState<FileList | null>(null);
   const [creating, setCreating] = React.useState(false);
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
 
   const selected = React.useMemo(
     () => (selectedId ? dogs.find((d) => d.id === selectedId) ?? null : null),
@@ -124,6 +125,15 @@ export function DogsPanel({ onToast }: Props) {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
+
+  React.useEffect(() => {
+    if (!createModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCreateModalOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [createModalOpen]);
 
   React.useEffect(() => {
     if (!selected) return;
@@ -194,6 +204,7 @@ export function DogsPanel({ onToast }: Props) {
       );
 
       onToast("Dog created.");
+      setCreateModalOpen(false);
 
       // Reset create form
       setCName("");
@@ -444,168 +455,217 @@ export function DogsPanel({ onToast }: Props) {
             </div>
           </div>
 
-          {/* Create */}
-          <div className="mt-3 min-w-0 overflow-hidden rounded-2xl border-2 border-meadow-200 bg-gradient-to-br from-meadow-50 to-white shadow-admin ring-1 ring-meadow-100 sm:mt-4">
-            <div className="mb-4 flex items-center gap-4 p-5 sm:p-6">
+          {/* Create — trigger opens modal on all screen sizes */}
+          <div className="mt-3 min-w-0 sm:mt-4">
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="flex w-full items-center gap-4 rounded-2xl border-2 border-meadow-200 bg-gradient-to-br from-meadow-50 to-white p-5 text-left shadow-admin ring-1 ring-meadow-100 transition-all hover:border-meadow-300 hover:shadow-adminHover focus:outline-none focus:ring-2 focus:ring-meadow-500 focus:ring-offset-2 sm:p-6"
+            >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-meadow-100 ring-2 ring-meadow-200">
                 <Plus size={26} className="text-meadow-700" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="text-2xl font-bold text-gray-900">Create new listing</div>
                 <div className="text-lg text-gray-600">
                   Add a dog and upload photos. First image becomes the cover.
                 </div>
               </div>
-            </div>
+            </button>
+          </div>
+        </div>
 
-            <div className="mt-3 grid gap-4 px-5 pb-5 sm:px-6 sm:pb-6">
-              <input
-                value={cName}
-                onChange={(e) => setCName(e.target.value)}
-                placeholder="Name *"
-                className={inputClass}
-              />
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  value={cSlug}
-                  onChange={(e) => setCSlug(e.target.value)}
-                  placeholder="Slug (optional)"
-                  className={inputClass}
-                />
-                <select
-                  value={String(cStatus)}
-                  onChange={(e) => setCStatus(e.target.value as DogStatus)}
-                  className={inputClass}
-                >
-                  <option value="available">available</option>
-                  <option value="reserved">reserved</option>
-                  <option value="sold">sold</option>
-                </select>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  value={cDeposit}
-                  onChange={(e) => setCDeposit(e.target.value)}
-                  placeholder="Deposit cents (e.g. 30000)"
-                  className={inputClass}
-                />
-                <input
-                  value={cPrice}
-                  onChange={(e) => setCPrice(e.target.value)}
-                  placeholder="Total cents (e.g. 180000)"
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  value={cBreed}
-                  onChange={(e) => setCBreed(e.target.value)}
-                  placeholder="Breed"
-                  className={inputClass}
-                />
-                <input
-                  value={cColor}
-                  onChange={(e) => setCColor(e.target.value)}
-                  placeholder="Color"
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input
-                  value={cSex}
-                  onChange={(e) => setCSex(e.target.value)}
-                  placeholder="Sex"
-                  className={inputClass}
-                />
-                <input
-                  value={cAgeWeeks}
-                  onChange={(e) => setCAgeWeeks(e.target.value)}
-                  placeholder="Age weeks"
-                  className={inputClass}
-                />
-                <input
-                  value={cReadyDate}
-                  onChange={(e) => setCReadyDate(e.target.value)}
-                  placeholder="Ready date (YYYY-MM-DD)"
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  value={cSortOrder}
-                  onChange={(e) => setCSortOrder(e.target.value)}
-                  placeholder="Sort order (0..n)"
-                  className={inputClass}
-                />
-                <input
-                  value={cAlt}
-                  onChange={(e) => setCAlt(e.target.value)}
-                  placeholder="Alt text for uploaded photos (optional)"
-                  className={inputClass}
-                />
-              </div>
-
-              <textarea
-                value={cDescription}
-                onChange={(e) => setCDescription(e.target.value)}
-                placeholder="Description (optional)"
-                className={`min-h-[96px] ${inputClass}`}
-              />
-
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-adminSm">
-                  <div className="mb-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
-                  <ImageIcon size={16} />
-                  Photos
-                </div>
-                <div className="mb-3 text-lg text-gray-600">
-                  Upload multiple. First image becomes cover. (v2 will add per-image management.)
-                </div>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setCFiles(e.target.files)}
-                  className="block w-full text-base text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 file:border file:border-gray-300 cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button className={`${btn("primary")} flex items-center gap-2`} onClick={createDog} disabled={creating}>
-                  <Plus size={14} />
-                  {creating ? "Creating…" : "Create"}
-                </button>
+        {/* Create new listing modal — scrollable, works on all screen sizes */}
+        {createModalOpen ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-listing-title"
+            onClick={(e) => e.target === e.currentTarget && setCreateModalOpen(false)}
+          >
+            <div
+              className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border-2 border-meadow-200 bg-white shadow-adminLg ring-1 ring-black/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="shrink-0 flex items-center justify-between gap-4 border-b border-stone-200 p-4 sm:p-5">
+                <h2 id="create-listing-title" className="text-xl font-bold text-gray-900 sm:text-2xl">
+                  Create new listing
+                </h2>
                 <button
-                  className={`${btn("muted")} flex items-center gap-2`}
-                  onClick={() => {
-                    setCName("");
-                    setCSlug("");
-                    setCStatus("available");
-                    setCDeposit("");
-                    setCPrice("");
-                    setCBreed("");
-                    setCSex("");
-                    setCAgeWeeks("");
-                    setCColor("");
-                    setCReadyDate("");
-                    setCSortOrder("0");
-                    setCDescription("");
-                    setCAlt("");
-                    setCFiles(null);
-                    onToast("Cleared.");
-                  }}
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="rounded-xl p-2 text-gray-500 hover:bg-stone-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-meadow-500"
+                  aria-label="Close"
                 >
-                  <X size={14} />
-                  Clear
+                  <X size={24} />
                 </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                <div className="grid gap-4">
+                  <input
+                    value={cName}
+                    onChange={(e) => setCName(e.target.value)}
+                    placeholder="Name *"
+                    className={inputClass}
+                  />
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={cSlug}
+                      onChange={(e) => setCSlug(e.target.value)}
+                      placeholder="Slug (optional)"
+                      className={inputClass}
+                    />
+                    <select
+                      value={String(cStatus)}
+                      onChange={(e) => setCStatus(e.target.value as DogStatus)}
+                      className={inputClass}
+                    >
+                      <option value="available">available</option>
+                      <option value="reserved">reserved</option>
+                      <option value="sold">sold</option>
+                    </select>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={cDeposit}
+                      onChange={(e) => setCDeposit(e.target.value)}
+                      placeholder="Deposit cents (e.g. 30000)"
+                      className={inputClass}
+                    />
+                    <input
+                      value={cPrice}
+                      onChange={(e) => setCPrice(e.target.value)}
+                      placeholder="Total cents (e.g. 180000)"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={cBreed}
+                      onChange={(e) => setCBreed(e.target.value)}
+                      placeholder="Breed"
+                      className={inputClass}
+                    />
+                    <input
+                      value={cColor}
+                      onChange={(e) => setCColor(e.target.value)}
+                      placeholder="Color"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <input
+                      value={cSex}
+                      onChange={(e) => setCSex(e.target.value)}
+                      placeholder="Sex"
+                      className={inputClass}
+                    />
+                    <input
+                      value={cAgeWeeks}
+                      onChange={(e) => setCAgeWeeks(e.target.value)}
+                      placeholder="Age weeks"
+                      className={inputClass}
+                    />
+                    <input
+                      value={cReadyDate}
+                      onChange={(e) => setCReadyDate(e.target.value)}
+                      placeholder="Ready date (YYYY-MM-DD)"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      value={cSortOrder}
+                      onChange={(e) => setCSortOrder(e.target.value)}
+                      placeholder="Sort order (0..n)"
+                      className={inputClass}
+                    />
+                    <input
+                      value={cAlt}
+                      onChange={(e) => setCAlt(e.target.value)}
+                      placeholder="Alt text for uploaded photos (optional)"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <textarea
+                    value={cDescription}
+                    onChange={(e) => setCDescription(e.target.value)}
+                    placeholder="Description (optional)"
+                    className={`min-h-[96px] ${inputClass}`}
+                  />
+
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-adminSm">
+                    <div className="mb-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
+                      <ImageIcon size={16} />
+                      Photos
+                    </div>
+                    <div className="mb-3 text-lg text-gray-600">
+                      Upload multiple. First image becomes cover.
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => setCFiles(e.target.files)}
+                      className="block w-full text-base text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-900 hover:file:bg-gray-200 file:border file:border-gray-300 cursor-pointer"
+                    />
+                  </div>
+
+                  {error ? <div className={alertErrorClass}>{error}</div> : null}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      className={`${btn("primary")} flex items-center gap-2`}
+                      onClick={() => void createDog()}
+                      disabled={creating}
+                    >
+                      <Plus size={14} />
+                      {creating ? "Creating…" : "Create"}
+                    </button>
+                    <button
+                      className={`${btn("muted")} flex items-center gap-2`}
+                      onClick={() => {
+                        setCName("");
+                        setCSlug("");
+                        setCStatus("available");
+                        setCDeposit("");
+                        setCPrice("");
+                        setCBreed("");
+                        setCSex("");
+                        setCAgeWeeks("");
+                        setCColor("");
+                        setCReadyDate("");
+                        setCSortOrder("0");
+                        setCDescription("");
+                        setCAlt("");
+                        setCFiles(null);
+                        setError(null);
+                        onToast("Cleared.");
+                      }}
+                    >
+                      <X size={14} />
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      className={btn("muted")}
+                      onClick={() => setCreateModalOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Right: editor — scrolls independently */}
         <div className="flex min-h-0 flex-col overflow-y-auto lg:col-span-7 lg:min-h-0 min-w-0">
@@ -616,7 +676,7 @@ export function DogsPanel({ onToast }: Props) {
               </div>
               <div className="mt-4 text-2xl font-bold text-gray-900">Select a dog</div>
               <div className="mt-2 text-lg text-gray-600">
-                Choose a listing from the left to edit, or create a new one below.
+                Choose a listing from the left to edit, or create a new one with the button above.
               </div>
             </div>
           ) : (

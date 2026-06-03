@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { RefreshCw, MessageSquare, CheckCircle2, XCircle, Clock, Star, Trash2, Image as ImageIcon } from "lucide-react";
 
 import type { Testimonial, TestimonialStatus } from "@/types/testimonials";
@@ -170,11 +171,14 @@ export function TestimonialsPanel({
                         </div>
                         <div className="flex gap-3 overflow-x-auto pr-2">
                           {(t.images ?? []).map((img) => (
-                            <div key={img.id} className="relative shrink-0">
-                              <img
+                            <div key={img.id} className="relative h-28 w-40 shrink-0 overflow-hidden rounded-2xl border border-gray-200">
+                              <Image
                                 src={img.url}
                                 alt={img.alt || "testimonial image"}
-                                className="h-28 w-40 rounded-2xl object-cover border border-gray-200"
+                                fill
+                                unoptimized
+                                sizes="160px"
+                                className="object-cover"
                               />
                             </div>
                           ))}

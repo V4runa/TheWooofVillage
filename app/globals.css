@@ -26,8 +26,11 @@ body {
   --tint-air: 248 252 255; /* airy lift */
   --tint-cool: 216 232 255; /* tiny cool counterbalance */
 
-  /* Background image hook */
-  --bg-image: url("/bg/woofvillage.png");
+  /* Background image hook (WebP with PNG fallback for older browsers) */
+  --bg-image: image-set(
+    url("/bg/woofvillage.webp") type("image/webp"),
+    url("/bg/woofvillage.png") type("image/png")
+  );
 }
 
 /* ---------------------------------------------

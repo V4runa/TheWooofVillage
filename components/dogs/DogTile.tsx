@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { Dog } from "@/types/dogs";
 import { Card } from "@/components/ui/Card";
@@ -71,14 +72,15 @@ export function DogTile({ dog, dense = true }: Props) {
 
         {/* Image */}
         <div className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
-          <div className="aspect-[4/3] flex items-center justify-center">
+          <div className="relative aspect-[4/3]">
             {img ? (
               <>
-                <img
+                <Image
                   src={img}
                   alt={dog.name}
-                  loading="lazy"
-                  className="max-h-full max-w-full w-auto h-auto object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                  className="object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 />
 
                 {/* Richer cozy overlay */}
@@ -88,7 +90,7 @@ export function DogTile({ dog, dense = true }: Props) {
                 />
               </>
             ) : (
-              <div className="text-sm font-semibold text-amber-950/85">
+              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-amber-950/85">
                 No photo yet
               </div>
             )}

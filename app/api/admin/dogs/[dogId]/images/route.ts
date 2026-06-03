@@ -3,6 +3,9 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { extFromType } from "@/lib/admin/utils";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 /* ============================================================
    POST → Upload image
    ============================================================ */
@@ -176,18 +179,21 @@ export async function PATCH(
       return NextResponse.json({ error: "orderedIds must be an array" }, { status: 400 });
     }
 
-    // Simple + safe: update one-by-one (small litters; fine for now)
-    for (let index = 0; index < orderedIds.length; index++) {
-      const id = orderedIds[index];
-      const { error } = await supabaseAdmin
-        .from("dog_images")
-        .update({ sort_order: index })
-        .eq("id", id)
-        .eq("dog_id", dogId);
+    // Run the per-row updates in parallel instead of sequentially to cut the
+    // number of blocking round-trips (litters are small, so this is safe).
+    const results = await Promise.all(
+      orderedIds.map((id: string, index: number) =>
+        supabaseAdmin
+          .from("dog_images")
+          .update({ sort_order: index })
+          .eq("id", id)
+          .eq("dog_id", dogId)
+      )
+    );
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      return NextResponse.json({ error: failed.error.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

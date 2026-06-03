@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/auth";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const ALLOWED = new Set(["new", "contacted", "closed", "all"]);
 
 function clampInt(n: number, min: number, max: number) {

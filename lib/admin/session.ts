@@ -11,12 +11,10 @@ type Payload = {
   exp: number; // expires at (unix seconds)
 };
 
-// Prefer a dedicated secret if you add one later.
-// For now, single-admin: ADMIN_PASSCODE is the secret (simple + effective for this project).
+// Prefer a dedicated signing secret; fall back to ADMIN_PASSCODE so existing
+// single-admin setups keep working without extra configuration.
 function getSecret(): string {
-  const secret = process.env.ADMIN_PASSCODE || "";
-  if (!secret) return "";
-  return secret;
+  return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSCODE || "";
 }
 
 function nowSeconds() {

@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { slugify, parseDateOrNull } from "@/lib/admin/utils";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ dogId: string }> }

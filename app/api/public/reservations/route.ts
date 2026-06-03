@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function cleanText(v: unknown, maxLen: number) {
   const s = String(v ?? "").trim();
@@ -14,6 +18,15 @@ function cleanOptionalText(v: unknown, maxLen: number) {
 
 export async function POST(req: Request) {
   try {
+    // Best-effort spam throttle: 5 reservation requests per IP per minute.
+    const limit = rateLimit(`reservations:${getClientIp(req)}`, 5, 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { ok: false, error: "Too many requests. Please wait a moment and try again." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
 
     const dog_id = cleanText(body.dog_id, 64);

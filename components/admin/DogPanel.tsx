@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { 
   RefreshCw, 
@@ -427,9 +428,9 @@ export function DogsPanel({ onToast }: Props) {
                       ].join(" ")}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
                           {coverUrl ? (
-                            <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+                            <Image src={coverUrl} alt="" fill sizes="56px" className="object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
                               <DogIcon size={24} className="text-stone-400" />
@@ -686,9 +687,11 @@ export function DogsPanel({ onToast }: Props) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-4">
                     {(selected as any).cover_image_url ? (
-                      <img
+                      <Image
                         src={(selected as any).cover_image_url}
                         alt=""
+                        width={96}
+                        height={80}
                         className="h-20 w-24 shrink-0 rounded-xl object-cover ring-2 ring-stone-200"
                       />
                     ) : (
@@ -765,9 +768,11 @@ export function DogsPanel({ onToast }: Props) {
                           <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                             Cover
                           </div>
-                          <img
+                          <Image
                             src={(selected as any).cover_image_url}
                             alt={selected.name}
+                            width={144}
+                            height={96}
                             className="mt-2 h-24 w-36 rounded-2xl object-cover border border-gray-200"
                           />
                         </div>
@@ -778,9 +783,11 @@ export function DogsPanel({ onToast }: Props) {
                           <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                             #{img.sort_order ?? 0}
                           </div>
-                          <img
+                          <Image
                             src={img.url}
                             alt={img.alt || selected.name}
+                            width={144}
+                            height={96}
                             className="mt-2 h-24 w-36 rounded-2xl object-cover border border-gray-200"
                           />
                         </div>

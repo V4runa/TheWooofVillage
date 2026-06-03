@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useTestimonials } from "@/hooks/useTestimonials";
 import type { Testimonial } from "@/types/testimonials";
@@ -261,11 +262,13 @@ export function TestimonialsSection() {
                 >
                   {img && (
                     <div className="relative h-44 w-full overflow-hidden">
-                      <img
+                      <Image
                         src={img}
                         alt={t.images?.[0]?.alt || "Adoption photo"}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                        loading="lazy"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(255,248,242,0.00)] via-[rgba(255,248,242,0.00)] to-[rgba(255,248,242,0.22)]" />
                     </div>

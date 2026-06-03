@@ -3,37 +3,19 @@ import type { NextRequest } from "next/server";
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "../../lib/admin/session";
 
 /**
- * Centralized admin authentication utilities.
- * - Primary: HttpOnly cookie session (professional)  
- * - Fallback (temporary): header passcode (legacy)
+ * Centralized admin authentication.
+ * Auth is performed exclusively via the HttpOnly signed session cookie set at
+ * login. (The legacy `x-admin-passcode` header bypass has been removed so the
+ * passcode is never transmitted on every request.)
  */
-
-function headerPasscodeMatches(req: Request | NextRequest): boolean {
-  const pass = process.env.ADMIN_PASSCODE || "";
-  if (!pass) return false;
-
-  const header =
-    req.headers.get("x-admin-passcode") ||
-    req.headers.get("x-admin-pass") ||
-    "";
-
-  return header === pass;
-}
-
 export async function isAdminRequest(req: Request | NextRequest): Promise<boolean> {
-  // 1) Cookie session (preferred)
   const cookieToken =
     "cookies" in req
       ? (req as NextRequest).cookies.get(ADMIN_COOKIE_NAME)?.value ?? null
       : null;
 
-  if (cookieToken) {
-    const ok = await verifyAdminSessionToken(cookieToken);
-    if (ok) return true;
-  }
-
-  // 2) Legacy header passcode (temporary support)
-  return headerPasscodeMatches(req);
+  if (!cookieToken) return false;
+  return verifyAdminSessionToken(cookieToken);
 }
 
 /**

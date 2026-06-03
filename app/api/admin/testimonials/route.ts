@@ -6,6 +6,9 @@ import type { Testimonial, TestimonialImage } from "@/types/testimonials";
 
 type TestimonialRow = Omit<Testimonial, "images">;
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
   if (authError) return authError;

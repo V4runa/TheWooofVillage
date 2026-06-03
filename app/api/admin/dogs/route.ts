@@ -5,6 +5,9 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { extFromType, slugify, parseIntOrNull, parseDateOrNull } from "@/lib/admin/utils";
 import type { DogRow, DogImage } from "@/types/dogs";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 /* ============================================================
    GET → Admin list dogs (all statuses) + images
    ============================================================ */

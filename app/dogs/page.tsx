@@ -176,10 +176,9 @@ export default function DogsPage() {
             <div
               className={[
                 "relative rounded-3xl sm:rounded-[44px]",
-                "bg-[rgba(255,248,242,0.62)]",
-                "border border-amber-950/14",
-                "ring-1 ring-inset ring-white/12",
-                "shadow-[0_18px_52px_-36px_rgba(17,24,39,0.55)]",
+                "bg-[rgba(255,250,244,0.9)]",
+                "border border-amber-950/10",
+                "shadow-[0_16px_44px_-32px_rgba(17,24,39,0.4)]",
                 "p-3 sm:p-4 lg:p-5",
               ].join(" ")}
             >

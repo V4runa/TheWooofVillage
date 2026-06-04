@@ -76,10 +76,9 @@ async function copyToClipboard(text: string) {
 function softPanel(cls?: string) {
   return [
     "rounded-3xl",
-    "bg-[rgba(255,248,242,0.78)]",
-    "ring-1 ring-inset ring-white/20",
+    "bg-[rgba(255,251,246,0.96)]",
     "border border-amber-950/10",
-    "shadow-[0_18px_44px_-28px_rgba(17,24,39,0.28)]",
+    "shadow-[0_12px_34px_-20px_rgba(17,24,39,0.22)]",
     cls ?? "",
   ].join(" ");
 }
@@ -87,7 +86,7 @@ function softPanel(cls?: string) {
 function subtlePill(cls?: string) {
   return [
     "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-    "bg-white/65 border border-amber-950/10",
+    "bg-white/80 border border-amber-950/12",
     "text-ink-secondary",
     cls ?? "",
   ].join(" ");
@@ -98,25 +97,11 @@ function subtlePill(cls?: string) {
    (match /app/page + testimonials)
 ------------------------------ */
 const photoTitleStyle: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow:
-    "0 24px 64px rgba(12,16,22,0.26), " +
-    "0 7px 20px rgba(12,16,22,0.16), " +
-    "0 1px 2px rgba(12,16,22,0.18), " +
-    "0 -1px 0 rgba(255,235,210,0.18)",
+  color: "rgb(28 34 44)",
 };
 
 const photoBodyStyle: React.CSSProperties = {
-  color: "rgba(255, 236, 210, 0.86)",
-  textShadow:
-    "0 22px 58px rgba(12,16,22,0.24), " +
-    "0 6px 18px rgba(12,16,22,0.14), " +
-    "0 1px 2px rgba(12,16,22,0.16)",
+  color: "rgb(62 76 98)",
 };
 
 function payGlyph(kind: "venmo" | "cashapp" | "paypal" | "zelle" | "phone") {
@@ -167,6 +152,22 @@ export default function DogDetailClient() {
     () => moneyFromCents(dog?.price_amount_cents),
     [dog?.price_amount_cents]
   );
+
+  // Payment options the owner has actually configured — used to turn the
+  // free-text "payment method" field into a simple, mistake-proof dropdown.
+  const paymentMethods = useMemo(() => {
+    const list: string[] = [];
+    if (merchant?.venmo_url) list.push("Venmo");
+    if (merchant?.cashapp_url) list.push("Cash App");
+    if (merchant?.paypal_url) list.push("PayPal");
+    if (merchant?.zelle_recipient) list.push("Zelle");
+    return list;
+  }, [
+    merchant?.venmo_url,
+    merchant?.cashapp_url,
+    merchant?.paypal_url,
+    merchant?.zelle_recipient,
+  ]);
 
   const images = useMemo(() => allImages(dog), [dog]);
   const primary = useMemo(() => bestPrimaryImage(dog), [dog]);
@@ -386,7 +387,7 @@ export default function DogDetailClient() {
             </p>
 
             {note ? (
-              <div className="mt-3 rounded-2xl bg-white/60 px-4 py-3 text-xs text-ink-secondary border border-amber-950/10">
+              <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-ink-primary border border-amber-950/12 shadow-[0_8px_24px_-16px_rgba(17,24,39,0.3)]">
                 {note}
               </div>
             ) : null}
@@ -421,10 +422,9 @@ export default function DogDetailClient() {
             <div
               className={[
                 "relative rounded-3xl sm:rounded-[44px]",
-                "bg-[rgba(255,248,242,0.62)]",
-                "border border-amber-950/14",
-                "ring-1 ring-inset ring-white/12",
-                "shadow-[0_18px_52px_-36px_rgba(17,24,39,0.55)]",
+                "bg-[rgba(255,250,244,0.92)]",
+                "border border-amber-950/10",
+                "shadow-[0_16px_44px_-30px_rgba(17,24,39,0.4)]",
                 "p-3 sm:p-4 lg:p-5",
               ].join(" ")}
             >
@@ -711,53 +711,129 @@ export default function DogDetailClient() {
                               </div>
 
                               {/* Optional request */}
-                              <div className="mt-4">
-                                <div className="text-xs font-semibold text-ink-secondary">
-                                  Optional: send a quick request
+                              <div className="mt-5 border-t border-amber-950/10 pt-4">
+                                <div className="text-sm font-extrabold text-ink-primary">
+                                  Send a quick request
                                 </div>
+                                <p className="mt-1 text-xs leading-relaxed text-ink-secondary">
+                                  Optional — let us know you sent a deposit and we'll confirm
+                                  your reservation by text or call.
+                                </p>
 
-                                <div className="mt-2 grid gap-3">
-                                  <input
-                                    value={draftName}
-                                    onChange={(e) => setDraftName(e.target.value)}
-                                    placeholder="Your name *"
-                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                                  />
-                                  <input
-                                    value={draftPhone}
-                                    onChange={(e) => setDraftPhone(e.target.value)}
-                                    placeholder="Your phone *"
-                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                                  />
-                                  <input
-                                    value={draftMethod}
-                                    onChange={(e) => setDraftMethod(e.target.value)}
-                                    placeholder="Payment method *"
-                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                                  />
-                                  <input
-                                    value={draftTxn}
-                                    onChange={(e) => setDraftTxn(e.target.value)}
-                                    placeholder="Transaction ID / handle (optional)"
-                                    className="w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                                  />
-                                  <textarea
-                                    value={draftMessage}
-                                    onChange={(e) => setDraftMessage(e.target.value)}
-                                    placeholder="Message (optional)"
-                                    className="min-h-[96px] w-full rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
-                                  />
+                                <div className="mt-3 grid gap-3">
+                                  <div>
+                                    <label
+                                      htmlFor="rsv-name"
+                                      className="mb-1 block text-xs font-bold text-ink-secondary"
+                                    >
+                                      Your name <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                      id="rsv-name"
+                                      value={draftName}
+                                      onChange={(e) => setDraftName(e.target.value)}
+                                      autoComplete="name"
+                                      placeholder="Jane Doe"
+                                      className="w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-meadow-500"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label
+                                      htmlFor="rsv-phone"
+                                      className="mb-1 block text-xs font-bold text-ink-secondary"
+                                    >
+                                      Your phone <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                      id="rsv-phone"
+                                      value={draftPhone}
+                                      onChange={(e) => setDraftPhone(e.target.value)}
+                                      type="tel"
+                                      inputMode="tel"
+                                      autoComplete="tel"
+                                      placeholder="(555) 123-4567"
+                                      className="w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-meadow-500"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label
+                                      htmlFor="rsv-method"
+                                      className="mb-1 block text-xs font-bold text-ink-secondary"
+                                    >
+                                      Payment method <span className="text-rose-500">*</span>
+                                    </label>
+                                    {paymentMethods.length > 0 ? (
+                                      <select
+                                        id="rsv-method"
+                                        value={draftMethod}
+                                        onChange={(e) => setDraftMethod(e.target.value)}
+                                        className="w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none focus:ring-2 focus:ring-meadow-500"
+                                      >
+                                        <option value="">Select how you paid…</option>
+                                        {paymentMethods.map((m) => (
+                                          <option key={m} value={m}>
+                                            {m}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        id="rsv-method"
+                                        value={draftMethod}
+                                        onChange={(e) => setDraftMethod(e.target.value)}
+                                        placeholder="e.g. Venmo, Cash App, Zelle"
+                                        className="w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-meadow-500"
+                                      />
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <label
+                                      htmlFor="rsv-txn"
+                                      className="mb-1 block text-xs font-bold text-ink-secondary"
+                                    >
+                                      Payment confirmation / handle{" "}
+                                      <span className="font-semibold text-ink-muted">(optional)</span>
+                                    </label>
+                                    <input
+                                      id="rsv-txn"
+                                      value={draftTxn}
+                                      onChange={(e) => setDraftTxn(e.target.value)}
+                                      placeholder="Transaction ID or your @handle"
+                                      className="w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-meadow-500"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label
+                                      htmlFor="rsv-msg"
+                                      className="mb-1 block text-xs font-bold text-ink-secondary"
+                                    >
+                                      Message{" "}
+                                      <span className="font-semibold text-ink-muted">(optional)</span>
+                                    </label>
+                                    <textarea
+                                      id="rsv-msg"
+                                      value={draftMessage}
+                                      onChange={(e) => setDraftMessage(e.target.value)}
+                                      placeholder="Anything you'd like us to know…"
+                                      className="min-h-[88px] w-full rounded-xl bg-white px-4 py-3 text-sm text-ink-primary ring-1 ring-amber-950/15 outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-meadow-500"
+                                    />
+                                  </div>
 
                                   <button
                                     disabled={submitting}
                                     onClick={submitReservationRequest}
                                     className={[
-                                      "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                                      "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)] hover:bg-[rgba(34,40,50,1)] transition",
+                                      "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold text-white",
+                                      "bg-[linear-gradient(90deg,rgba(34,141,74,1)_0%,rgba(44,121,230,0.95)_120%)]",
+                                      "shadow-[0_14px_34px_-20px_rgba(17,24,39,0.6)] transition hover:brightness-105",
                                       submitting ? "opacity-60 cursor-not-allowed" : "",
                                     ].join(" ")}
                                   >
-                                    {submitting ? "Sending..." : "Send request"}
+                                    {submitting ? "Sending…" : "Send request"}
                                   </button>
                                 </div>
                               </div>

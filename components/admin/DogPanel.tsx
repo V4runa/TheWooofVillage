@@ -25,11 +25,16 @@ import {
 
 import type { Dog, DogStatus } from "@/types/dogs";
 import { adminForm, adminJson } from "@/lib/admin/apiClient";
+import { compressImage } from "@/lib/admin/image";
 import {
   softShell,
   btn,
   formatDate,
   moneyFromCents,
+  centsToDollarsInput,
+  dollarsToCents,
+  labelClass,
+  fieldHintClass,
   pill,
   inputClass,
   inputClassSm,
@@ -150,8 +155,8 @@ export function DogsPanel({ onToast }: Props) {
     setEName(selected.name || "");
     setESlug(selected.slug || "");
     setEStatus((selected.status || "available") as DogStatus);
-    setEDeposit(selected.deposit_amount_cents == null ? "" : String(selected.deposit_amount_cents));
-    setEPrice(selected.price_amount_cents == null ? "" : String(selected.price_amount_cents));
+    setEDeposit(centsToDollarsInput(selected.deposit_amount_cents));
+    setEPrice(centsToDollarsInput(selected.price_amount_cents));
     setEBreed(selected.breed || "");
     setESex(selected.sex || "");
     setEAgeWeeks(selected.age_weeks == null ? "" : String(selected.age_weeks));
@@ -177,7 +182,7 @@ export function DogsPanel({ onToast }: Props) {
   async function createDog() {
     const name = cName.trim();
     if (!name) {
-      setError("Name is required.");
+      setError("Please enter a name for the puppy.");
       return;
     }
 
@@ -185,6 +190,10 @@ export function DogsPanel({ onToast }: Props) {
     setError(null);
 
     try {
+      // Step 1 — create the listing itself (no photos in this request). Keeping
+      // the create call small and JSON-light makes it fast and reliable; photos
+      // are uploaded separately so one bad/large photo can never block the
+      // listing from being created.
       const form = new FormData();
       form.set("name", name);
 
@@ -192,8 +201,10 @@ export function DogsPanel({ onToast }: Props) {
       if (cStatus) form.set("status", String(cStatus));
       if (cDescription.trim()) form.set("description", cDescription.trim());
 
-      if (cDeposit.trim()) form.set("deposit_amount_cents", cDeposit.trim());
-      if (cPrice.trim()) form.set("price_amount_cents", cPrice.trim());
+      const depositCents = dollarsToCents(cDeposit);
+      const priceCents = dollarsToCents(cPrice);
+      if (depositCents != null) form.set("deposit_amount_cents", String(depositCents));
+      if (priceCents != null) form.set("price_amount_cents", String(priceCents));
 
       if (cBreed.trim()) form.set("breed", cBreed.trim());
       if (cSex.trim()) form.set("sex", cSex.trim());
@@ -202,17 +213,56 @@ export function DogsPanel({ onToast }: Props) {
       if (cReadyDate.trim()) form.set("ready_date", cReadyDate.trim());
       if (cSortOrder.trim()) form.set("sort_order", cSortOrder.trim());
 
-      if (cAlt.trim()) form.set("alt", cAlt.trim());
-
-      const files = cFiles ? Array.from(cFiles) : [];
-      for (const f of files) form.append("files", f);
-
       const data = await adminForm<{ ok: true; dog: any; images: any[] }>(
         "/api/admin/dogs",
         form
       );
 
-      onToast("Dog created.");
+      const createdId = data?.dog?.id as string | undefined;
+
+      // Step 2 — upload photos one at a time (compressed in the browser first).
+      const files = cFiles ? Array.from(cFiles) : [];
+      let firstUploadedUrl: string | null = null;
+      let uploadFailures = 0;
+
+      if (createdId && files.length > 0) {
+        for (const raw of files) {
+          try {
+            const file = await compressImage(raw);
+            const imgForm = new FormData();
+            imgForm.set("file", file);
+            if (cAlt.trim()) imgForm.set("alt", cAlt.trim());
+            const res = await adminForm<{ ok: true; image: { url?: string } }>(
+              `/api/admin/dogs/${createdId}/images`,
+              imgForm
+            );
+            if (!firstUploadedUrl && res?.image?.url) firstUploadedUrl = res.image.url;
+          } catch {
+            uploadFailures += 1;
+          }
+        }
+
+        // Step 3 — make the first uploaded photo the cover.
+        if (firstUploadedUrl) {
+          try {
+            await adminJson(`/api/admin/dogs/${createdId}`, {
+              method: "PATCH",
+              body: JSON.stringify({ cover_image_url: firstUploadedUrl }),
+            });
+          } catch {
+            /* non-fatal: cover falls back to first image automatically */
+          }
+        }
+      }
+
+      if (uploadFailures > 0) {
+        onToast(
+          `Listing created. ${uploadFailures} photo${uploadFailures === 1 ? "" : "s"} couldn't upload — add them again below.`
+        );
+      } else {
+        onToast("Listing created.");
+      }
+
       setCreateModalOpen(false);
 
       // Reset create form
@@ -233,10 +283,9 @@ export function DogsPanel({ onToast }: Props) {
 
       await load();
 
-      const createdId = data?.dog?.id as string | undefined;
       if (createdId) setSelectedId(createdId);
     } catch (e: any) {
-      setError(e?.message || "Create failed.");
+      setError(e?.message || "Could not create the listing. Please try again.");
     } finally {
       setCreating(false);
     }
@@ -255,8 +304,8 @@ export function DogsPanel({ onToast }: Props) {
       payload.slug = eSlug.trim() || null;
       payload.status = String(eStatus || "available").trim();
 
-      payload.deposit_amount_cents = eDeposit.trim() ? Number(eDeposit.trim()) : null;
-      payload.price_amount_cents = ePrice.trim() ? Number(ePrice.trim()) : null;
+      payload.deposit_amount_cents = dollarsToCents(eDeposit);
+      payload.price_amount_cents = dollarsToCents(ePrice);
 
       payload.breed = eBreed.trim() || null;
       payload.sex = eSex.trim() || null;
@@ -315,8 +364,8 @@ export function DogsPanel({ onToast }: Props) {
     setEName(selected.name || "");
     setESlug(selected.slug || "");
     setEStatus((selected.status || "available") as DogStatus);
-    setEDeposit(selected.deposit_amount_cents == null ? "" : String(selected.deposit_amount_cents));
-    setEPrice(selected.price_amount_cents == null ? "" : String(selected.price_amount_cents));
+    setEDeposit(centsToDollarsInput(selected.deposit_amount_cents));
+    setEPrice(centsToDollarsInput(selected.price_amount_cents));
     setEBreed(selected.breed || "");
     setESex(selected.sex || "");
     setEAgeWeeks(selected.age_weeks == null ? "" : String(selected.age_weeks));
@@ -336,15 +385,37 @@ export function DogsPanel({ onToast }: Props) {
   async function uploadImages(files: FileList | null) {
     if (!selected || !files || files.length === 0) return;
 
+    const hadCover = Boolean((selected as any).cover_image_url);
+    let firstUploadedUrl: string | null = null;
+
     setUploading(true);
     setError(null);
     try {
-      // Upload one at a time so an early failure doesn't lose later files.
-      for (const file of Array.from(files)) {
+      // Compress in the browser, then upload one at a time so an early failure
+      // doesn't lose later files.
+      for (const raw of Array.from(files)) {
+        const file = await compressImage(raw);
         const form = new FormData();
         form.set("file", file);
-        await adminForm(`/api/admin/dogs/${selected.id}/images`, form);
+        const res = await adminForm<{ ok: true; image: { url?: string } }>(
+          `/api/admin/dogs/${selected.id}/images`,
+          form
+        );
+        if (!firstUploadedUrl && res?.image?.url) firstUploadedUrl = res.image.url;
       }
+
+      // If this listing had no cover yet, promote the first uploaded photo.
+      if (!hadCover && firstUploadedUrl) {
+        try {
+          await adminJson(`/api/admin/dogs/${selected.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ cover_image_url: firstUploadedUrl }),
+          });
+        } catch {
+          /* non-fatal */
+        }
+      }
+
       onToast(files.length > 1 ? "Photos uploaded." : "Photo uploaded.");
       await load();
     } catch (e: any) {
@@ -608,103 +679,195 @@ export function DogsPanel({ onToast }: Props) {
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
                 <div className="grid gap-4">
-                  <input
-                    value={cName}
-                    onChange={(e) => setCName(e.target.value)}
-                    placeholder="Name *"
-                    className={inputClass}
-                  />
-
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="c-name" className={labelClass}>
+                      Puppy name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      value={cSlug}
-                      onChange={(e) => setCSlug(e.target.value)}
-                      placeholder="Slug (optional)"
+                      id="c-name"
+                      value={cName}
+                      onChange={(e) => setCName(e.target.value)}
+                      placeholder="e.g. Bella"
                       className={inputClass}
                     />
+                  </div>
+
+                  <div>
+                    <label htmlFor="c-status" className={labelClass}>
+                      Status
+                    </label>
                     <select
+                      id="c-status"
                       value={String(cStatus)}
                       onChange={(e) => setCStatus(e.target.value as DogStatus)}
                       className={inputClass}
                     >
-                      <option value="available">available</option>
-                      <option value="reserved">reserved</option>
-                      <option value="sold">sold</option>
+                      <option value="available">Available</option>
+                      <option value="reserved">Reserved</option>
+                      <option value="sold">Adopted / sold</option>
                     </select>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={cDeposit}
-                      onChange={(e) => setCDeposit(e.target.value)}
-                      placeholder="Deposit cents (e.g. 30000)"
-                      className={inputClass}
-                    />
-                    <input
-                      value={cPrice}
-                      onChange={(e) => setCPrice(e.target.value)}
-                      placeholder="Total cents (e.g. 180000)"
-                      className={inputClass}
-                    />
+                    <div>
+                      <label htmlFor="c-deposit" className={labelClass}>
+                        Deposit (USD)
+                      </label>
+                      <input
+                        id="c-deposit"
+                        value={cDeposit}
+                        onChange={(e) => setCDeposit(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="300"
+                        className={inputClass}
+                      />
+                      <div className={fieldHintClass}>Whole dollars — e.g. 300</div>
+                    </div>
+                    <div>
+                      <label htmlFor="c-price" className={labelClass}>
+                        Total price (USD)
+                      </label>
+                      <input
+                        id="c-price"
+                        value={cPrice}
+                        onChange={(e) => setCPrice(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="1800"
+                        className={inputClass}
+                      />
+                      <div className={fieldHintClass}>Whole dollars — e.g. 1800</div>
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={cBreed}
-                      onChange={(e) => setCBreed(e.target.value)}
-                      placeholder="Breed"
-                      className={inputClass}
-                    />
-                    <input
-                      value={cColor}
-                      onChange={(e) => setCColor(e.target.value)}
-                      placeholder="Color"
-                      className={inputClass}
-                    />
+                    <div>
+                      <label htmlFor="c-breed" className={labelClass}>
+                        Breed
+                      </label>
+                      <input
+                        id="c-breed"
+                        value={cBreed}
+                        onChange={(e) => setCBreed(e.target.value)}
+                        placeholder="e.g. Golden Retriever"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="c-color" className={labelClass}>
+                        Color
+                      </label>
+                      <input
+                        id="c-color"
+                        value={cColor}
+                        onChange={(e) => setCColor(e.target.value)}
+                        placeholder="e.g. Cream"
+                        className={inputClass}
+                      />
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <input
-                      value={cSex}
-                      onChange={(e) => setCSex(e.target.value)}
-                      placeholder="Sex"
-                      className={inputClass}
-                    />
-                    <input
-                      value={cAgeWeeks}
-                      onChange={(e) => setCAgeWeeks(e.target.value)}
-                      placeholder="Age weeks"
-                      className={inputClass}
-                    />
-                    <input
-                      value={cReadyDate}
-                      onChange={(e) => setCReadyDate(e.target.value)}
-                      placeholder="Ready date (YYYY-MM-DD)"
-                      className={inputClass}
+                    <div>
+                      <label htmlFor="c-sex" className={labelClass}>
+                        Sex
+                      </label>
+                      <select
+                        id="c-sex"
+                        value={cSex}
+                        onChange={(e) => setCSex(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">—</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="c-age" className={labelClass}>
+                        Age (weeks)
+                      </label>
+                      <input
+                        id="c-age"
+                        value={cAgeWeeks}
+                        onChange={(e) => setCAgeWeeks(e.target.value)}
+                        inputMode="numeric"
+                        placeholder="8"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="c-ready" className={labelClass}>
+                        Ready date
+                      </label>
+                      <input
+                        id="c-ready"
+                        type="date"
+                        value={cReadyDate}
+                        onChange={(e) => setCReadyDate(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="c-desc" className={labelClass}>
+                      Description
+                    </label>
+                    <textarea
+                      id="c-desc"
+                      value={cDescription}
+                      onChange={(e) => setCDescription(e.target.value)}
+                      placeholder="Temperament, personality, what makes this pup special…"
+                      className={`min-h-[96px] ${inputClass}`}
                     />
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={cSortOrder}
-                      onChange={(e) => setCSortOrder(e.target.value)}
-                      placeholder="Sort order (0..n)"
-                      className={inputClass}
-                    />
-                    <input
-                      value={cAlt}
-                      onChange={(e) => setCAlt(e.target.value)}
-                      placeholder="Alt text for uploaded photos (optional)"
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <textarea
-                    value={cDescription}
-                    onChange={(e) => setCDescription(e.target.value)}
-                    placeholder="Description (optional)"
-                    className={`min-h-[96px] ${inputClass}`}
-                  />
+                  <details className="rounded-xl border border-stone-200 bg-stone-50/60 px-4 py-3">
+                    <summary className="cursor-pointer text-[17px] font-bold text-gray-700">
+                      Advanced options
+                    </summary>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="c-slug" className={labelClass}>
+                          Web address (slug)
+                        </label>
+                        <input
+                          id="c-slug"
+                          value={cSlug}
+                          onChange={(e) => setCSlug(e.target.value)}
+                          placeholder="auto-generated from name"
+                          className={inputClass}
+                        />
+                        <div className={fieldHintClass}>Leave blank to auto-generate.</div>
+                      </div>
+                      <div>
+                        <label htmlFor="c-sort" className={labelClass}>
+                          Display order
+                        </label>
+                        <input
+                          id="c-sort"
+                          value={cSortOrder}
+                          onChange={(e) => setCSortOrder(e.target.value)}
+                          inputMode="numeric"
+                          placeholder="0"
+                          className={inputClass}
+                        />
+                        <div className={fieldHintClass}>Lower numbers show first.</div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="c-alt" className={labelClass}>
+                          Photo description
+                        </label>
+                        <input
+                          id="c-alt"
+                          value={cAlt}
+                          onChange={(e) => setCAlt(e.target.value)}
+                          placeholder="Describes photos for accessibility (optional)"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  </details>
 
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-adminSm">
                     <div className="mb-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
@@ -712,7 +875,8 @@ export function DogsPanel({ onToast }: Props) {
                       Photos
                     </div>
                     <div className="mb-3 text-lg text-gray-600">
-                      Upload multiple. First image becomes cover.
+                      Add one or more. The first photo becomes the cover. Large
+                      photos are automatically optimized before upload.
                     </div>
                     <input
                       type="file"
@@ -732,7 +896,7 @@ export function DogsPanel({ onToast }: Props) {
                       disabled={creating}
                     >
                       <Plus size={14} />
-                      {creating ? "Creating…" : "Create"}
+                      {creating ? "Creating…" : "Create listing"}
                     </button>
                     <button
                       className={`${btn("muted")} flex items-center gap-2`}
@@ -980,95 +1144,179 @@ export function DogsPanel({ onToast }: Props) {
                 </div>
 
                 <div className="mt-4 grid gap-3">
-                  <input
-                    value={eName}
-                    onChange={(e) => setEName(e.target.value)}
-                    placeholder="Name"
-                    className={inputClass}
-                  />
-
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="e-name" className={labelClass}>
+                      Puppy name
+                    </label>
                     <input
-                      value={eSlug}
-                      onChange={(e) => setESlug(e.target.value)}
-                      placeholder="Slug"
+                      id="e-name"
+                      value={eName}
+                      onChange={(e) => setEName(e.target.value)}
+                      placeholder="e.g. Bella"
                       className={inputClass}
                     />
+                  </div>
+
+                  <div>
+                    <label htmlFor="e-status" className={labelClass}>
+                      Status
+                    </label>
                     <select
+                      id="e-status"
                       value={String(eStatus)}
                       onChange={(e) => setEStatus(e.target.value as DogStatus)}
                       className={inputClass}
                     >
-                      <option value="available">available</option>
-                      <option value="reserved">reserved</option>
-                      <option value="sold">sold</option>
+                      <option value="available">Available</option>
+                      <option value="reserved">Reserved</option>
+                      <option value="sold">Adopted / sold</option>
                     </select>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={eDeposit}
-                      onChange={(e) => setEDeposit(e.target.value)}
-                      placeholder="Deposit cents"
-                      className={inputClass}
-                    />
-                    <input
-                      value={ePrice}
-                      onChange={(e) => setEPrice(e.target.value)}
-                      placeholder="Total cents"
-                      className={inputClass}
-                    />
+                    <div>
+                      <label htmlFor="e-deposit" className={labelClass}>
+                        Deposit (USD)
+                      </label>
+                      <input
+                        id="e-deposit"
+                        value={eDeposit}
+                        onChange={(e) => setEDeposit(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="300"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="e-price" className={labelClass}>
+                        Total price (USD)
+                      </label>
+                      <input
+                        id="e-price"
+                        value={ePrice}
+                        onChange={(e) => setEPrice(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="1800"
+                        className={inputClass}
+                      />
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      value={eBreed}
-                      onChange={(e) => setEBreed(e.target.value)}
-                      placeholder="Breed"
-                      className={inputClass}
-                    />
-                    <input
-                      value={eColor}
-                      onChange={(e) => setEColor(e.target.value)}
-                      placeholder="Color"
-                      className={inputClass}
-                    />
+                    <div>
+                      <label htmlFor="e-breed" className={labelClass}>
+                        Breed
+                      </label>
+                      <input
+                        id="e-breed"
+                        value={eBreed}
+                        onChange={(e) => setEBreed(e.target.value)}
+                        placeholder="e.g. Golden Retriever"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="e-color" className={labelClass}>
+                        Color
+                      </label>
+                      <input
+                        id="e-color"
+                        value={eColor}
+                        onChange={(e) => setEColor(e.target.value)}
+                        placeholder="e.g. Cream"
+                        className={inputClass}
+                      />
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <input
-                      value={eSex}
-                      onChange={(e) => setESex(e.target.value)}
-                      placeholder="Sex"
-                      className={inputClass}
-                    />
-                    <input
-                      value={eAgeWeeks}
-                      onChange={(e) => setEAgeWeeks(e.target.value)}
-                      placeholder="Age weeks"
-                      className={inputClass}
-                    />
-                    <input
-                      value={eReadyDate}
-                      onChange={(e) => setEReadyDate(e.target.value)}
-                      placeholder="Ready date (YYYY-MM-DD)"
-                      className={inputClass}
+                    <div>
+                      <label htmlFor="e-sex" className={labelClass}>
+                        Sex
+                      </label>
+                      <select
+                        id="e-sex"
+                        value={eSex}
+                        onChange={(e) => setESex(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">—</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="e-age" className={labelClass}>
+                        Age (weeks)
+                      </label>
+                      <input
+                        id="e-age"
+                        value={eAgeWeeks}
+                        onChange={(e) => setEAgeWeeks(e.target.value)}
+                        inputMode="numeric"
+                        placeholder="8"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="e-ready" className={labelClass}>
+                        Ready date
+                      </label>
+                      <input
+                        id="e-ready"
+                        type="date"
+                        value={eReadyDate}
+                        onChange={(e) => setEReadyDate(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="e-desc" className={labelClass}>
+                      Description
+                    </label>
+                    <textarea
+                      id="e-desc"
+                      value={eDescription}
+                      onChange={(e) => setEDescription(e.target.value)}
+                      placeholder="Temperament, personality, what makes this pup special…"
+                      className={`min-h-[120px] ${inputClass}`}
                     />
                   </div>
 
-                  <input
-                    value={eSortOrder}
-                    onChange={(e) => setESortOrder(e.target.value)}
-                    placeholder="Sort order"
-                    className={inputClass}
-                  />
-
-                  <textarea
-                    value={eDescription}
-                    onChange={(e) => setEDescription(e.target.value)}
-                    placeholder="Description"
-                    className={`min-h-[120px] ${inputClass}`}
-                  />
+                  <details className="rounded-xl border border-stone-200 bg-stone-50/60 px-4 py-3">
+                    <summary className="cursor-pointer text-[17px] font-bold text-gray-700">
+                      Advanced options
+                    </summary>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="e-slug" className={labelClass}>
+                          Web address (slug)
+                        </label>
+                        <input
+                          id="e-slug"
+                          value={eSlug}
+                          onChange={(e) => setESlug(e.target.value)}
+                          placeholder="bella"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="e-sort" className={labelClass}>
+                          Display order
+                        </label>
+                        <input
+                          id="e-sort"
+                          value={eSortOrder}
+                          onChange={(e) => setESortOrder(e.target.value)}
+                          inputMode="numeric"
+                          placeholder="0"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  </details>
 
                   <div className="flex flex-wrap items-center gap-2">
                     <button className={btn("primary")} onClick={saveDog} disabled={saving}>

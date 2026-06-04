@@ -43,105 +43,37 @@ body {
   --tint-ember: 255 206 160; /* fire/lamplight */
   --tint-air: 248 252 255; /* airy lift */
   --tint-cool: 216 232 255; /* tiny cool counterbalance */
-
-  /* Background image hook (WebP with PNG fallback for older browsers) */
-  --bg-image: image-set(
-    url("/bg/woofvillage.webp") type("image/webp"),
-    url("/bg/woofvillage.png") type("image/png")
-  );
 }
 
 /* ---------------------------------------------
-   Root background + grading (NO backdrop-filter)
+   Root background — clean, warm "paper" surface.
+   The busy photo backdrop was removed: it forced translucent panels and
+   ivory text that became unreadable. A solid warm wash keeps the cozy vibe
+   while letting dark ink text pop with strong contrast everywhere.
 --------------------------------------------- */
 html {
   position: relative;
   isolation: isolate;
-
-  background-color: rgb(246 238 228);
+  background-color: #f6efe4; /* warm cream */
 }
 
 /**
- * Fixed, viewport-sized background image layer.
- * We use a `position: fixed` pseudo-element instead of
- * `background-attachment: fixed`, which iOS Safari ignores (treating it as
- * `scroll`) and which makes the photo look zoomed and janky on phones.
- * This keeps the image stable and correctly sized on every device.
+ * Fixed, viewport-sized wash with a whisper of the brand tri-color in the
+ * corners. Pure gradients (no image) so it's crisp, fast, and mobile-safe
+ * (a fixed pseudo-element avoids the iOS `background-attachment: fixed` bug).
  */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -3;
-  pointer-events: none;
-
-  background-image: var(--bg-image);
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-
-  /* Keep it bright + airy indoors */
-  filter: brightness(1.08) saturate(1.04) contrast(1.02);
-}
-
-/**
- * IMPORTANT:
- * DO NOT use backdrop-filter here.
- * It causes viewport-height seams in Chrome with fixed layers.
- *
- * Instead we use pure overlays that are guaranteed seamless.
- */
-html::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
   z-index: -1;
-
-  /* airy, warm “film” that never seams */
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.22) 0%,
-      rgba(255, 250, 244, 0.12) 42%,
-      rgba(255, 255, 255, 0.22) 100%
-    );
-}
-
-html::after {
-  content: "";
-  position: fixed;
-  inset: 0;
   pointer-events: none;
-  z-index: -1;
 
-  /* minimal, controlled ambiance */
   background:
-    /* airy lift from top */
-    radial-gradient(
-      1200px 720px at 50% 6%,
-      rgba(var(--tint-air), 0.22),
-      transparent 60%
-    ),
-    /* ember warmth (subtle) */
-    radial-gradient(
-      950px 650px at 28% 62%,
-      rgba(var(--tint-ember), 0.14),
-      transparent 66%
-    ),
-    /* tiny cool counterbalance */
-    radial-gradient(
-      900px 620px at 86% 18%,
-      rgba(var(--tint-cool), 0.07),
-      transparent 62%
-    ),
-    /* ultra-light vignette (no dark edges) */
-    radial-gradient(
-      1600px 980px at 50% 28%,
-      rgba(0, 0, 0, 0.00) 0%,
-      transparent 62%,
-      rgba(0, 0, 0, 0.06) 100%
-    );
+    radial-gradient(900px 620px at 8% -6%, rgba(47, 179, 95, 0.07), transparent 58%),
+    radial-gradient(900px 620px at 100% 0%, rgba(79, 156, 255, 0.06), transparent 56%),
+    radial-gradient(1100px 760px at 50% 116%, rgba(255, 127, 42, 0.06), transparent 60%),
+    linear-gradient(180deg, #fbf6ee 0%, #f5ecdf 100%);
 }
 
 /* ---------------------------------------------
@@ -184,29 +116,6 @@ a {
   color: inherit;
   text-decoration: none;
 }
-
-/* ---------------------------------------------
-   On-photo readability (NO containers, NO dark plates)
---------------------------------------------- */
-.on-photo {
-  /* Flip ink tokens locally so existing Tailwind classes still work */
-  --ink-primary: 255 248 242;   /* warm ivory */
-  --ink-secondary: 255 244 236; /* slightly softer ivory */
-}
-
-/* Subtle, premium readability without “outlined” text */
-.on-photo h1,
-.on-photo h2,
-.on-photo h3,
-.on-photo h4,
-.on-photo h5,
-.on-photo h6,
-.on-photo p {
-  text-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.22),
-    0 2px 10px rgba(0, 0, 0, 0.16);
-}
-
 
 /* ---------------------------------------------
    Selection + focus

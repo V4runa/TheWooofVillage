@@ -99,6 +99,31 @@ export function moneyFromCents(cents?: number | null) {
   }).format(cents / 100);
 }
 
+/**
+ * Money helpers so the admin types whole dollars (e.g. "300" or "1,800.50")
+ * instead of cents. Forms talk dollars; the API/DB stays in integer cents.
+ */
+export function centsToDollarsInput(cents?: number | null): string {
+  if (cents == null) return "";
+  // Show a clean integer when there are no cents, else 2 decimals.
+  const dollars = cents / 100;
+  return Number.isInteger(dollars) ? String(dollars) : dollars.toFixed(2);
+}
+
+export function dollarsToCents(value: string): number | null {
+  const cleaned = value.replace(/[$,\s]/g, "").trim();
+  if (!cleaned) return null;
+  const dollars = Number.parseFloat(cleaned);
+  if (!Number.isFinite(dollars) || dollars < 0) return null;
+  return Math.round(dollars * 100);
+}
+
+/** Small form-field label used across admin create/edit forms. */
+export const labelClass =
+  "mb-1.5 block text-[15px] font-bold text-gray-700";
+
+export const fieldHintClass = "mt-1 text-sm text-gray-500";
+
 const pillNavBase =
   "inline-flex items-center rounded-lg px-4 py-3 text-[19px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-meadow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 

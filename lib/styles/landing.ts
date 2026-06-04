@@ -6,31 +6,19 @@ import type { CSSProperties } from "react";
  */
 
 /**
- * Typography style for photo titles with gradient text effect.
+ * Section title style. Solid, warm dark ink for crisp contrast on the light
+ * surface (the playful tri-color now lives in the accent rule beneath titles
+ * and in card ribbons, instead of low-contrast gradient text).
  */
 export const photoTitleStyle: CSSProperties = {
-  backgroundImage:
-    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow:
-    "0 24px 64px rgba(12,16,22,0.26), " +
-    "0 7px 20px rgba(12,16,22,0.16), " +
-    "0 1px 2px rgba(12,16,22,0.18), " +
-    "0 -1px 0 rgba(255,235,210,0.18)",
+  color: "rgb(28 34 44)",
 };
 
 /**
- * Typography style for photo body text with shadow.
+ * Section body / supporting copy — readable secondary ink.
  */
 export const photoBodyStyle: CSSProperties = {
-  color: "rgba(255, 244, 228, 0.95)",
-  textShadow:
-    "0 22px 58px rgba(12,16,22,0.22), " +
-    "0 6px 18px rgba(12,16,22,0.12), " +
-    "0 1px 2px rgba(12,16,22,0.14)",
+  color: "rgb(62 76 98)",
 };
 
 /**

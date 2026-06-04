@@ -29,20 +29,17 @@ export function Card({
    */
   const variants = {
     surface: clsx(
-      // slightly deeper + warmer than before (less washed)
-      "bg-[rgba(255,246,238,0.72)]",
-      // warm border (no harsh gray)
-      "border border-amber-950/14",
-      // tighter, cleaner shadow
-      "shadow-[0_12px_34px_-22px_rgba(17,24,39,0.34)]"
+      // near-solid warm white = crisp content on the light page
+      "bg-[rgba(255,251,246,0.96)]",
+      "border border-amber-950/10",
+      "shadow-[0_10px_30px_-18px_rgba(17,24,39,0.22)]"
     ),
 
     elevated: clsx(
-      // a touch brighter than surface, still warm
-      "bg-[rgba(255,248,242,0.78)]",
-      "border border-amber-950/16",
-      "shadow-[0_18px_52px_-26px_rgba(17,24,39,0.40)]",
-      "hover:shadow-[0_26px_74px_-32px_rgba(17,24,39,0.46)]",
+      "bg-[rgba(255,252,248,0.98)]",
+      "border border-amber-950/10",
+      "shadow-[0_16px_44px_-22px_rgba(17,24,39,0.26)]",
+      "hover:shadow-[0_24px_60px_-28px_rgba(17,24,39,0.32)]",
       "hover:-translate-y-[1px]",
       "active:translate-y-0"
     ),
@@ -88,25 +85,14 @@ export function Card({
         />
       ) : null}
 
-      {/* Top sheen — very controlled (more on elevated, minimal on surface) */}
+      {/* Top sheen — barely-there now that cards are near-solid */}
       {variant !== "ghost" ? (
         <span
           aria-hidden="true"
           className={clsx(
-            "pointer-events-none absolute inset-0",
-            variant === "elevated" ? "opacity-55" : "opacity-30",
-            "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.28),transparent_62%)]"
-          )}
-        />
-      ) : null}
-
-      {/* Bottom vignette — adds contrast so content doesn’t feel washed */}
-      {variant !== "ghost" ? (
-        <span
-          aria-hidden="true"
-          className={clsx(
-            "pointer-events-none absolute inset-0 opacity-45",
-            "bg-[radial-gradient(1200px_520px_at_50%_120%,rgba(17,24,39,0.14),transparent_62%)]"
+            "pointer-events-none absolute inset-x-0 top-0 h-24",
+            "opacity-40",
+            "bg-[linear-gradient(to_bottom,rgba(255,255,255,0.6),transparent)]"
           )}
         />
       ) : null}

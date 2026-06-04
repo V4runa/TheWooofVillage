@@ -45,24 +45,11 @@ function firstImage(t: Testimonial) {
 }
 
 const titleInkStyle: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(90deg, rgba(255,236,210,0.98) 0%, rgba(248,252,255,0.96) 46%, rgba(255,226,198,0.98) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow:
-    "0 24px 64px rgba(12,16,22,0.22), " +
-    "0 7px 20px rgba(12,16,22,0.14), " +
-    "0 1px 2px rgba(12,16,22,0.16)",
+  color: "rgb(28 34 44)",
 };
 
 const subtitleInkStyle: React.CSSProperties = {
-  color: "rgba(255, 236, 210, 0.82)",
-  textShadow:
-    "0 20px 56px rgba(12,16,22,0.20), " +
-    "0 6px 18px rgba(12,16,22,0.12), " +
-    "0 1px 2px rgba(12,16,22,0.14)",
+  color: "rgb(62 76 98)",
 };
 
 export function TestimonialsSection() {

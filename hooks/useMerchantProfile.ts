@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
 import type { MerchantProfile } from "@/types/merchant";
 
 type UseMerchantProfileResult = {
@@ -22,28 +21,30 @@ export function useMerchantProfile(): UseMerchantProfileResult {
       setLoading(true);
       setError(null);
 
-      // Single-tenant: grab the latest profile row, don't assume a magic id.
-      const { data, error } = await supabase
-        .from("merchant_profile")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      try {
+        const res = await fetch("/api/public/merchant-profile", {
+          cache: "no-store",
+        });
+        const json = await res.json().catch(() => null);
+        if (!alive) return;
 
-      if (!alive) return;
-
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
+        if (!res.ok || !json?.ok) {
+          setError(json?.error || "Could not load profile.");
+          setProfile(null);
+        } else {
+          setProfile((json.profile as MerchantProfile) ?? null);
+        }
+      } catch (e: any) {
+        if (alive) {
+          setError(e?.message || "Could not load profile.");
+          setProfile(null);
+        }
+      } finally {
+        if (alive) setLoading(false);
       }
-
-      setProfile((data as MerchantProfile) ?? null);
-      setLoading(false);
     }
 
-    load();
+    void load();
 
     return () => {
       alive = false;

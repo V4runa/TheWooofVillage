@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
 
 import { Container } from "@/components/ui/Container";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 
-import type { DogImage, DogRow, Dog } from "@/types/dogs";
+import type { Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
 
 /* -----------------------------
@@ -34,10 +33,6 @@ function formatDate(dateStr?: string | null) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function buildDogWithImages(row: DogRow, images: DogImage[]): Dog {
-  return { ...row, images };
 }
 
 function bestPrimaryImage(dog: Dog | null) {
@@ -181,111 +176,51 @@ export default function DogDetailClient() {
     if (!dogParam) return;
     let alive = true;
 
+    async function fetchDog(query: string): Promise<Dog | null> {
+      const res = await fetch(`/api/public/dogs?${query}`, { cache: "no-store" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) return null;
+      return (json.dog as Dog) ?? null;
+    }
+
     async function load() {
       setLoading(true);
       setError(null);
 
-      const merchantReq = supabase
-        .from("merchant_profile")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .returns<MerchantProfile[]>();
+      try {
+        // Merchant profile + dog (by slug, then fall back to id) in parallel.
+        const [merchRes, bySlug] = await Promise.all([
+          fetch("/api/public/merchant-profile", { cache: "no-store" })
+            .then((r) => r.json())
+            .catch(() => null),
+          fetchDog(`slug=${encodeURIComponent(dogParam)}`),
+        ]);
 
-      const bySlug = await supabase
-        .from("dogs")
-        .select(
-          [
-            "id",
-            "name",
-            "description",
-            "status",
-            "deposit_amount_cents",
-            "price_amount_cents",
-            "cover_image_url",
-            "breed",
-            "sex",
-            "age_weeks",
-            "color",
-            "ready_date",
-            "sort_order",
-            "slug",
-            "created_at",
-            "updated_at",
-          ].join(",")
-        )
-        .eq("slug", dogParam)
-        .maybeSingle()
-        .returns<DogRow>();
+        if (!alive) return;
+        setMerchant(merchRes?.ok ? (merchRes.profile as MerchantProfile) ?? null : null);
 
-      let dogRow: DogRow | null = null;
+        let full = bySlug;
+        if (!full) {
+          full = await fetchDog(`id=${encodeURIComponent(dogParam)}`);
+          if (!alive) return;
+        }
 
-      if (!bySlug.error && bySlug.data) {
-        dogRow = bySlug.data;
-      } else {
-        const byId = await supabase
-          .from("dogs")
-          .select(
-            [
-              "id",
-              "name",
-              "description",
-              "status",
-              "deposit_amount_cents",
-              "price_amount_cents",
-              "cover_image_url",
-              "breed",
-              "sex",
-              "age_weeks",
-              "color",
-              "ready_date",
-              "sort_order",
-              "slug",
-              "created_at",
-              "updated_at",
-            ].join(",")
-          )
-          .eq("id", dogParam)
-          .maybeSingle()
-          .returns<DogRow>();
+        if (!full) {
+          setDog(null);
+          setSelectedImage(null);
+          return;
+        }
 
-        if (!byId.error && byId.data) dogRow = byId.data;
+        setDog(full);
+        setSelectedImage(full.cover_image_url || full.images?.[0]?.url || null);
+      } catch (e: any) {
+        if (alive) {
+          setError(e?.message || "Could not load this puppy.");
+          setDog(null);
+        }
+      } finally {
+        if (alive) setLoading(false);
       }
-
-      const merchantRes = await merchantReq;
-      if (!alive) return;
-
-      if (!merchantRes.error) setMerchant(merchantRes.data?.[0] ?? null);
-      else setMerchant(null);
-
-      if (!dogRow) {
-        setDog(null);
-        setSelectedImage(null);
-        setLoading(false);
-        setError(null);
-        return;
-      }
-
-      const { data: imgData, error: imgErr } = await supabase
-        .from("dog_images")
-        .select("id,dog_id,url,alt,sort_order,created_at")
-        .eq("dog_id", dogRow.id)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true })
-        .returns<DogImage[]>();
-
-      if (!alive) return;
-
-      const imagesSafe = imgErr ? [] : imgData ?? [];
-      const full = buildDogWithImages(dogRow, imagesSafe);
-
-      setDog(full);
-      setSelectedImage(full.cover_image_url || full.images?.[0]?.url || null);
-      setLoading(false);
-
-      if (imgErr) setError(imgErr.message);
-      else setError(null);
     }
 
     void load();

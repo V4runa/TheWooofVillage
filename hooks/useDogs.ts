@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import type { Dog, DogImage, DogRow, DogStatus } from "@/types/dogs";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dog, DogStatus } from "@/types/dogs";
 
 type UseDogsOptions = {
   statuses?: DogStatus[];
@@ -20,96 +19,48 @@ export function useDogs(options: UseDogsOptions = {}): UseDogsResult {
   const { statuses = ["available"], includeAll = false } = options;
 
   // Keep dependency stable without creating a new array every render.
-  const stableStatuses = useMemo(() => statuses, [JSON.stringify(statuses)]);
+  const statusesKey = JSON.stringify(statuses);
+  const stableStatuses = useMemo(() => statuses, [statusesKey]);
 
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    let query = supabase
-      .from("dogs")
-      .select(
-        [
-          "id",
-          "name",
-          "description",
-          "status",
-          "deposit_amount_cents",
-          "price_amount_cents",
-          "cover_image_url",
-          "breed",
-          "sex",
-          "age_weeks",
-          "color",
-          "ready_date",
-          "sort_order",
-          "slug",
-          "created_at",
-          "updated_at",
-        ].join(",")
-      )
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+    try {
+      const params = new URLSearchParams();
+      if (includeAll) {
+        params.set("includeAll", "true");
+      } else if (stableStatuses.length > 0) {
+        params.set("statuses", stableStatuses.join(","));
+      }
 
-    if (!includeAll && stableStatuses.length > 0) {
-      query = query.in("status", stableStatuses);
-    }
+      const res = await fetch(`/api/public/dogs?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const json = await res.json().catch(() => null);
 
-    // ✅ Force correct typing (prevents GenericStringError[] inference)
-    const { data: dogsData, error: dogsError } = await query.returns<DogRow[]>();
-
-    if (dogsError) {
-      setError(dogsError.message);
-      setDogs([]);
-      setLoading(false);
-      return;
-    }
-
-    const baseDogs: DogRow[] = dogsData ?? [];
-
-    // Fetch all images for the returned dogs (small batch, so this is fine)
-    const dogIds = baseDogs.map((d) => d.id);
-    const imagesByDogId: Record<string, DogImage[]> = {};
-
-    if (dogIds.length > 0) {
-      const { data: imagesData, error: imagesError } = await supabase
-        .from("dog_images")
-        .select("id,dog_id,url,alt,sort_order,created_at")
-        .in("dog_id", dogIds)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true })
-        .returns<DogImage[]>();
-
-      if (imagesError) {
-        setError(imagesError.message);
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Could not load puppies.");
         setDogs([]);
-        setLoading(false);
         return;
       }
 
-      for (const img of imagesData ?? []) {
-        const key = img.dog_id;
-        if (!imagesByDogId[key]) imagesByDogId[key] = [];
-        imagesByDogId[key].push(img);
-      }
+      setDogs((json.dogs as Dog[]) ?? []);
+    } catch (e: any) {
+      setError(e?.message || "Could not load puppies.");
+      setDogs([]);
+    } finally {
+      setLoading(false);
     }
-
-    const merged: Dog[] = baseDogs.map((d) => ({
-      ...d,
-      images: imagesByDogId[d.id] ?? [],
-    }));
-
-    setDogs(merged);
-    setLoading(false);
-  }
+  }, [includeAll, stableStatuses]);
 
   useEffect(() => {
     void load();
-  }, [includeAll, stableStatuses]);
+  }, [load]);
 
   return {
     dogs,

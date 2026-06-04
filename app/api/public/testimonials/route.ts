@@ -5,6 +5,69 @@ import { getClientIp, rateLimit } from "@/lib/rateLimit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type TestimonialImageRow = {
+  id: string;
+  testimonial_id: string;
+  url: string;
+  alt: string | null;
+  sort_order: number | null;
+  created_at: string;
+};
+
+/**
+ * Public, read-only list of APPROVED testimonials (+ images).
+ * Served from the server so the public site never depends on browser-side
+ * Supabase env vars.
+ */
+export async function GET() {
+  try {
+    const { data: base, error } = await supabaseAdmin
+      .from("testimonials")
+      .select(
+        "id,created_at,updated_at,status,author_name,author_location,rating,message,dog_id"
+      )
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    const rows = base ?? [];
+    const ids = rows.map((t: any) => t.id);
+    const byTestimonial: Record<string, TestimonialImageRow[]> = {};
+
+    if (ids.length > 0) {
+      const { data: imgs } = await supabaseAdmin
+        .from("testimonial_images")
+        .select("id,testimonial_id,url,alt,sort_order,created_at")
+        .in("testimonial_id", ids)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .returns<TestimonialImageRow[]>();
+
+      for (const img of imgs ?? []) {
+        (byTestimonial[img.testimonial_id] ??= []).push(img);
+      }
+    }
+
+    const testimonials = rows.map((t: any) => ({
+      ...t,
+      images: byTestimonial[t.id] ?? [],
+    }));
+
+    return NextResponse.json(
+      { ok: true, testimonials },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: e?.message || "Failed to load testimonials" },
+      { status: 500 }
+    );
+  }
+}
+
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }

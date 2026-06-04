@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import type {
-  Testimonial,
-  TestimonialImage,
-  TestimonialStatus,
-} from "@/types/testimonials";
+import { useCallback, useEffect, useState } from "react";
+import type { Testimonial, TestimonialStatus } from "@/types/testimonials";
 
 type UseTestimonialsOptions = {
   statuses?: TestimonialStatus[]; // default: ["approved"]
   limit?: number; // optional cap
-  includeAll?: boolean; // if true, ignores statuses filter
+  includeAll?: boolean; // kept for API compatibility
 };
 
 type UseTestimonialsResult = {
@@ -21,101 +16,44 @@ type UseTestimonialsResult = {
   refetch: () => Promise<void>;
 };
 
-type TestimonialRow = Omit<Testimonial, "images">;
-
 export function useTestimonials(
   options: UseTestimonialsOptions = {}
 ): UseTestimonialsResult {
-  const { statuses = ["approved"], limit, includeAll = false } = options;
-
-  const stableStatuses = useMemo(() => statuses, [JSON.stringify(statuses)]);
+  const { limit } = options;
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    let query = supabase
-      .from("testimonials")
-      .select(
-        [
-          "id",
-          "created_at",
-          "updated_at",
-          "status",
-          "author_name",
-          "author_location",
-          "rating",
-          "message",
-          "dog_id",
-        ].join(",")
-      )
-      .order("created_at", { ascending: false });
+    try {
+      // The public endpoint only ever returns approved testimonials.
+      const res = await fetch("/api/public/testimonials", { cache: "no-store" });
+      const json = await res.json().catch(() => null);
 
-    if (!includeAll && stableStatuses?.length) {
-      query = query.in("status", stableStatuses);
-    }
-
-    if (typeof limit === "number") {
-      query = query.limit(limit);
-    }
-
-    const {
-      data: testimonialData,
-      error: testimonialError,
-    } = await query.returns<TestimonialRow[]>();
-
-    if (testimonialError) {
-      setError(testimonialError.message);
-      setTestimonials([]);
-      setLoading(false);
-      return;
-    }
-
-    const base: TestimonialRow[] = testimonialData ?? [];
-    const ids = base.map((t) => t.id);
-
-    let imagesByTestimonialId: Record<string, TestimonialImage[]> = {};
-
-    if (ids.length > 0) {
-      const { data: imagesData, error: imagesError } = await supabase
-        .from("testimonial_images")
-        .select("id,testimonial_id,url,alt,sort_order,created_at")
-        .in("testimonial_id", ids)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true })
-        .returns<TestimonialImage[]>();
-
-      if (imagesError) {
-        setError(imagesError.message);
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Could not load testimonials.");
         setTestimonials([]);
-        setLoading(false);
         return;
       }
 
-      for (const img of imagesData ?? []) {
-        if (!imagesByTestimonialId[img.testimonial_id]) {
-          imagesByTestimonialId[img.testimonial_id] = [];
-        }
-        imagesByTestimonialId[img.testimonial_id].push(img);
-      }
+      let list = (json.testimonials as Testimonial[]) ?? [];
+      if (typeof limit === "number") list = list.slice(0, limit);
+      setTestimonials(list);
+    } catch (e: any) {
+      setError(e?.message || "Could not load testimonials.");
+      setTestimonials([]);
+    } finally {
+      setLoading(false);
     }
-
-    const merged: Testimonial[] = base.map((t) => ({
-      ...t,
-      images: imagesByTestimonialId[t.id] ?? [],
-    }));
-
-    setTestimonials(merged);
-    setLoading(false);
-  }
+  }, [limit]);
 
   useEffect(() => {
     void load();
-  }, [includeAll, stableStatuses, limit]);
+  }, [load]);
 
   return {
     testimonials,

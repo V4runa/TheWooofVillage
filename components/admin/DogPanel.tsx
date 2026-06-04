@@ -17,6 +17,10 @@ import {
   FileText,
   ExternalLink,
   Dog as DogIcon,
+  Upload,
+  Star,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 
 import type { Dog, DogStatus } from "@/types/dogs";
@@ -97,6 +101,10 @@ export function DogsPanel({ onToast }: Props) {
   const [eDescription, setEDescription] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+
+  // Image management (upload / set cover / reorder / delete)
+  const [uploading, setUploading] = React.useState(false);
+  const [imgBusyKey, setImgBusyKey] = React.useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -319,8 +327,103 @@ export function DogsPanel({ onToast }: Props) {
     onToast("Reverted.");
   }
 
+  // Sorted images for the currently selected dog.
+  const selectedImages = React.useMemo(() => {
+    const imgs = (((selected as any)?.images ?? []) as any[]) ?? [];
+    return [...imgs].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0));
+  }, [selected]);
+
+  async function uploadImages(files: FileList | null) {
+    if (!selected || !files || files.length === 0) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      // Upload one at a time so an early failure doesn't lose later files.
+      for (const file of Array.from(files)) {
+        const form = new FormData();
+        form.set("file", file);
+        await adminForm(`/api/admin/dogs/${selected.id}/images`, form);
+      }
+      onToast(files.length > 1 ? "Photos uploaded." : "Photo uploaded.");
+      await load();
+    } catch (e: any) {
+      setError(e?.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function deleteImage(imageId: string) {
+    if (!selected) return;
+    if (!window.confirm("Delete this photo? This can't be undone.")) return;
+
+    setImgBusyKey(imageId);
+    setError(null);
+    try {
+      await adminJson(
+        `/api/admin/dogs/${selected.id}/images?imageId=${encodeURIComponent(imageId)}`,
+        { method: "DELETE" }
+      );
+      onToast("Photo deleted.");
+      await load();
+    } catch (e: any) {
+      setError(e?.message || "Delete failed.");
+    } finally {
+      setImgBusyKey(null);
+    }
+  }
+
+  async function setCover(url: string) {
+    if (!selected) return;
+
+    setImgBusyKey(url);
+    setError(null);
+    try {
+      const data = await adminJson<{ ok: true; dog: Dog | null }>(
+        `/api/admin/dogs/${selected.id}`,
+        { method: "PATCH", body: JSON.stringify({ cover_image_url: url }) }
+      );
+      if (data?.dog) {
+        setDogs((prev) => prev.map((d) => (d.id === selected.id ? { ...d, ...data.dog } : d)));
+      } else {
+        await load();
+      }
+      onToast("Cover photo updated.");
+    } catch (e: any) {
+      setError(e?.message || "Could not set cover.");
+    } finally {
+      setImgBusyKey(null);
+    }
+  }
+
+  async function moveImage(imageId: string, dir: -1 | 1) {
+    if (!selected) return;
+
+    const ids = selectedImages.map((i) => i.id as string);
+    const idx = ids.indexOf(imageId);
+    const next = idx + dir;
+    if (idx < 0 || next < 0 || next >= ids.length) return;
+
+    [ids[idx], ids[next]] = [ids[next], ids[idx]];
+
+    setImgBusyKey(imageId);
+    setError(null);
+    try {
+      await adminJson(`/api/admin/dogs/${selected.id}/images`, {
+        method: "PATCH",
+        body: JSON.stringify({ orderedIds: ids }),
+      });
+      await load();
+    } catch (e: any) {
+      setError(e?.message || "Reorder failed.");
+    } finally {
+      setImgBusyKey(null);
+    }
+  }
+
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3 overflow-hidden sm:gap-4">
+    <div className="flex w-full min-w-0 flex-1 flex-col gap-3 sm:gap-4 lg:min-h-0 lg:overflow-hidden">
       {/* Filters + search — toolbar with admin stripe */}
       <div className="shrink-0 overflow-hidden rounded-2xl border-2 border-stone-200 bg-gradient-to-r from-stone-50 to-white shadow-admin ring-1 ring-black/5">
         <div className="h-2.5 w-full shrink-0 rounded-t-2xl" style={ADMIN_TOPPER_STYLES.meadow} aria-hidden />
@@ -378,10 +481,11 @@ export function DogsPanel({ onToast }: Props) {
         </div>
       </div>
 
-      {/* Main split — fills remaining height; single row constrained so columns scroll, not page */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 lg:grid-cols-12 lg:gap-4 min-w-0">
-        {/* Left: list + create — scrolls as one column */}
-        <div className="flex min-h-0 flex-col overflow-y-auto lg:col-span-5 lg:min-h-0 min-w-0">
+      {/* Main split — on lg, fills remaining height with columns scrolling independently;
+          on mobile it's a natural stacked, page-scrolling layout. */}
+      <div className="grid flex-1 grid-cols-1 gap-3 min-w-0 lg:min-h-0 lg:grid-cols-12 lg:grid-rows-[minmax(0,1fr)] lg:gap-4">
+        {/* Left: list + create */}
+        <div className="flex flex-col min-w-0 lg:col-span-5 lg:min-h-0 lg:overflow-y-auto">
           <div className={`${softShell("shrink-0 overflow-hidden p-5 sm:p-6")}`}>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -668,8 +772,8 @@ export function DogsPanel({ onToast }: Props) {
           </div>
         ) : null}
 
-        {/* Right: editor — scrolls independently */}
-        <div className="flex min-h-0 flex-col overflow-y-auto lg:col-span-7 lg:min-h-0 min-w-0">
+        {/* Right: editor */}
+        <div className="flex flex-col min-w-0 lg:col-span-7 lg:min-h-0 lg:overflow-y-auto">
           {!selected ? (
             <div className="shrink-0 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/80 p-8 text-center shadow-adminSm">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-200">
@@ -743,58 +847,127 @@ export function DogsPanel({ onToast }: Props) {
                 </div>
               </div>
 
-              {/* Images preview */}
+              {/* Images manager */}
               <div className={`${softShell("shrink-0 overflow-hidden p-5 sm:p-6")}`}>
-                <div className="mb-4 flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 ring-2 ring-sky-200">
-                    <ImageIcon size={24} className="text-sky-700" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">Photos</div>
-                    <div className="text-lg text-gray-600">
-                  v1: preview only. v2 will add set cover / reorder / delete image / upload to existing dog.
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-100 ring-2 ring-sky-200">
+                      <ImageIcon size={24} className="text-sky-700" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">Photos</div>
+                      <div className="text-lg text-gray-600">
+                        Upload, set the cover, reorder, or delete. The cover shows first everywhere.
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-3 flex gap-3 overflow-x-auto pr-2 sm:mt-4">
-                  {(selected as any).images?.length === 0 && !(selected as any).cover_image_url ? (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-lg text-gray-600 shadow-adminSm">
-                  No images yet.
-                </div>
-                  ) : (
-                    <>
-                      {(selected as any).cover_image_url ? (
-                        <div className="shrink-0">
-                          <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                            Cover
-                          </div>
-                          <Image
-                            src={(selected as any).cover_image_url}
-                            alt={selected.name}
-                            width={144}
-                            height={96}
-                            className="mt-2 h-24 w-36 rounded-2xl object-cover border border-gray-200"
-                          />
-                        </div>
-                      ) : null}
 
-                      {((selected as any).images ?? []).map((img: any) => (
-                        <div key={img.id} className="shrink-0">
-                          <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                            #{img.sort_order ?? 0}
-                          </div>
-                          <Image
-                            src={img.url}
-                            alt={img.alt || selected.name}
-                            width={144}
-                            height={96}
-                            className="mt-2 h-24 w-36 rounded-2xl object-cover border border-gray-200"
-                          />
-                        </div>
-                      ))}
-                    </>
-                  )}
+                  <label
+                    className={`${btn("primary")} flex cursor-pointer items-center gap-2 ${
+                      uploading ? "pointer-events-none opacity-60" : ""
+                    }`}
+                  >
+                    <Upload size={16} />
+                    {uploading ? "Uploading…" : "Add photos"}
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={(e) => {
+                        void uploadImages(e.target.files);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
                 </div>
+
+                {selectedImages.length === 0 ? (
+                  <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50/80 p-6 text-center text-lg text-gray-600 shadow-adminSm">
+                    No photos yet. Click <span className="font-bold">“Add photos”</span> to
+                    upload — the first one becomes the cover.
+                  </div>
+                ) : (
+                  <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {selectedImages.map((img: any, idx: number) => {
+                      const coverUrl = (selected as any).cover_image_url as string | null;
+                      const isCover = Boolean(coverUrl) && coverUrl === img.url;
+                      const busy = imgBusyKey === img.id || imgBusyKey === img.url;
+                      return (
+                        <div
+                          key={img.id}
+                          className={[
+                            "overflow-hidden rounded-2xl border-2 bg-white shadow-adminSm transition",
+                            isCover
+                              ? "border-meadow-400 ring-2 ring-meadow-200"
+                              : "border-stone-200",
+                            busy ? "opacity-60" : "",
+                          ].join(" ")}
+                        >
+                          <div className="relative aspect-[4/3] bg-stone-100">
+                            <Image
+                              src={img.url}
+                              alt={img.alt || selected.name}
+                              fill
+                              sizes="220px"
+                              className="object-cover"
+                            />
+                            {isCover ? (
+                              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-meadow-600 px-2.5 py-1 text-xs font-bold text-white shadow">
+                                <Star size={12} /> Cover
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-1 p-2">
+                            <button
+                              type="button"
+                              title="Move earlier"
+                              disabled={busy || idx === 0}
+                              onClick={() => void moveImage(img.id, -1)}
+                              className="rounded-lg p-2 text-gray-600 hover:bg-stone-100 disabled:opacity-40"
+                            >
+                              <ArrowLeft size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              title="Move later"
+                              disabled={busy || idx === selectedImages.length - 1}
+                              onClick={() => void moveImage(img.id, 1)}
+                              className="rounded-lg p-2 text-gray-600 hover:bg-stone-100 disabled:opacity-40"
+                            >
+                              <ArrowRight size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              title={isCover ? "This is the cover" : "Set as cover"}
+                              disabled={busy || isCover}
+                              onClick={() => void setCover(img.url)}
+                              className={[
+                                "rounded-lg p-2 disabled:opacity-40",
+                                isCover
+                                  ? "text-meadow-600"
+                                  : "text-gray-600 hover:bg-stone-100",
+                              ].join(" ")}
+                            >
+                              <Star size={18} className={isCover ? "fill-meadow-500" : ""} />
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete photo"
+                              disabled={busy}
+                              onClick={() => void deleteImage(img.id)}
+                              className="rounded-lg p-2 text-red-600 hover:bg-red-50 disabled:opacity-40"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Editable fields */}

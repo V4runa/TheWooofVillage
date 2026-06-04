@@ -5,6 +5,7 @@ import type { Dog } from "@/types/dogs";
 
 import { Container } from "@/components/ui/Container";
 import { LandingHeader } from "@/components/landing/LandingHeader";
+import { SiteFooter } from "@/components/landing/SiteFooter";
 import { DogTile } from "@/components/dogs/DogTile";
 
 import { useDogs } from "@/hooks/useDogs";
@@ -174,7 +175,7 @@ export default function DogsPage() {
             {/* showroom shell (this is the “little container” expanded) */}
             <div
               className={[
-                "relative rounded-[44px]",
+                "relative rounded-3xl sm:rounded-[44px]",
                 "bg-[rgba(255,248,242,0.62)]",
                 "border border-amber-950/14",
                 "ring-1 ring-inset ring-white/12",
@@ -197,6 +198,8 @@ export default function DogsPage() {
           </div>
         </section>
       </Container>
+
+      <SiteFooter />
 
       <style jsx global>{woofSheenKeyframes}</style>
     </main>

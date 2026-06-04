@@ -79,10 +79,12 @@ export function AdminShell({
   const resolvedSubtitle = subtitle ?? meta.subtitle;
   const isDogsPage = pathname.startsWith("/admin/dogs");
 
-  // Fixed viewport height + overflow hidden so every admin page is self-contained (no body scroll)
+  // Desktop: fixed viewport height app-shell (no body scroll).
+  // Mobile/tablet: natural document scroll using dvh so browser chrome never
+  // cuts off content (e.g. Save buttons) the way 100vh / h-screen does.
   return (
     <div
-      className="relative flex h-screen max-h-screen flex-col overflow-hidden bg-gradient-to-br from-stone-100 via-meadow-50/40 to-sky-50/30"
+      className="relative flex min-h-dvh flex-col overflow-x-hidden bg-gradient-to-br from-stone-100 via-meadow-50/40 to-sky-50/30 lg:h-dvh lg:max-h-dvh lg:overflow-hidden"
       data-admin="true"
     >
       {/* Top bar — strong presence, accent stripe */}
@@ -152,8 +154,8 @@ export function AdminShell({
         </Container>
       </header>
 
-      {/* Mobile nav */}
-      <div className="sm:hidden shrink-0 border-b border-stone-200 bg-white px-4 py-3 shadow-sm">
+      {/* Mobile nav — horizontally scrollable so the row never overflows the viewport */}
+      <div className="sm:hidden shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-4 py-3 shadow-sm [-webkit-overflow-scrolling:touch]">
         <nav className="flex items-center gap-1 min-w-max pb-1" aria-label="Admin sections">
           {NAV.map((item) => {
             const active =
@@ -198,9 +200,10 @@ export function AdminShell({
               </div>
             )}
 
-            {/* Main card — content scrolls when tall (e.g. merchant profile) so Save is reachable on all screens */}
-            <div className={`${softShell("flex min-h-0 flex-1 flex-col overflow-hidden p-0 shadow-adminLg ring-1 ring-black/5")} flex flex-col`}>
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-b-2xl p-6 sm:p-8">
+            {/* Main card — content scrolls when tall (e.g. merchant profile) so Save is reachable on all screens.
+                On mobile the whole page scrolls; on lg the card scrolls internally. */}
+            <div className={`${softShell("flex min-h-0 flex-1 flex-col p-0 shadow-adminLg ring-1 ring-black/5 lg:overflow-hidden")} flex flex-col`}>
+              <div className="flex min-h-0 flex-1 flex-col rounded-b-2xl p-6 sm:p-8 lg:overflow-y-auto">
                 {children}
               </div>
             </div>

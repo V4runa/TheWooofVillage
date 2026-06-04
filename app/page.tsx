@@ -5,6 +5,8 @@ import { Container } from "@/components/ui/Container";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { HomeHeroSlab } from "@/components/landing/HomeHeroSlab";
 import { DogsGrid } from "@/components/dogs/DogsGrid";
+import { TrustSection } from "@/components/landing/TrustSection";
+import { SiteFooter } from "@/components/landing/SiteFooter";
 import { TestimonialsSection } from "@/components/testimonials/TestimonialsSection";
 import { useDogs } from "@/hooks/useDogs";
 import { useMerchantProfile } from "@/hooks/useMerchantProfile";
@@ -82,9 +84,15 @@ export default function Home() {
         </section>
 
         <section className="mt-12 sm:mt-14 lg:mt-16">
+          <TrustSection />
+        </section>
+
+        <section className="mt-12 sm:mt-14 lg:mt-16">
           <TestimonialsSection />
         </section>
       </Container>
+
+      <SiteFooter />
 
       {/* keyframes kept local to avoid touching global CSS */}
       <style jsx global>{woofSheenKeyframes}</style>

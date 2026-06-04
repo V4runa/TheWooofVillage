@@ -10,6 +10,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        xs: "480px",
+      },
+      fontFamily: {
+        sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+      },
       colors: {
         /**
          * Semantic tokens (source of truth in globals.css :root)

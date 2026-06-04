@@ -32,6 +32,9 @@ export async function PATCH(
     if (typeof body?.sex === "string") update.sex = body.sex.trim() || null;
     if (typeof body?.color === "string") update.color = body.color.trim() || null;
 
+    if (body?.cover_image_url === null || typeof body?.cover_image_url === "string")
+      update.cover_image_url = body.cover_image_url || null;
+
     if (body?.age_weeks === null || typeof body?.age_weeks === "number")
       update.age_weeks = body.age_weeks;
 

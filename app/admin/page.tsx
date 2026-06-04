@@ -46,7 +46,7 @@ const LINK = { meadow: "text-meadow-700 hover:text-meadow-800", sky: "text-sky-7
 
 export default function AdminPage() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
       {/* Compact welcome + quick access */}
       <div className="shrink-0 flex items-center justify-between gap-4 py-4">
         <div className="flex items-center gap-4 min-w-0">
@@ -61,8 +61,8 @@ export default function AdminPage() {
         <span className="text-base font-bold uppercase tracking-wider text-gray-400 shrink-0">Quick access</span>
       </div>
 
-      {/* 2x2 cards — flex-1 min-h-0 so they fill and don't overflow */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-3 content-stretch">
+      {/* Cards — single column on phones, 2-up on small+, fills the viewport on desktop */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:min-h-0 lg:flex-1 lg:content-stretch">
         {CARDS.map((c) => {
           const Icon = c.icon;
           const topperStyle = CARD_TOPPER_STYLE[c.accent];
@@ -70,7 +70,7 @@ export default function AdminPage() {
             <Link
               key={c.href}
               href={c.href}
-              className={`${softShell("group flex min-h-0 flex-col overflow-hidden transition-shadow hover:shadow-adminHover")} border border-stone-200`}
+              className={`${softShell("group flex flex-col transition-shadow hover:shadow-adminHover lg:min-h-0 lg:overflow-hidden")} border border-stone-200`}
             >
               {/* Colored topper bar: Dogs green, Reservations blue, Testimonials orange, Profile stone */}
               <div
@@ -78,7 +78,7 @@ export default function AdminPage() {
                 style={topperStyle}
                 aria-hidden
               />
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-5 sm:p-6">
+              <div className="flex flex-1 flex-col p-5 sm:p-6 lg:min-h-0 lg:overflow-hidden">
                 <div className="flex items-start gap-4">
                   <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ring-2 ${CHIP[c.accent]}`}>
                     <Icon size={28} className={ICON_COLOR[c.accent]} />
@@ -107,14 +107,14 @@ export default function AdminPage() {
 
       {/* Compact notes — shrink-0 */}
       <div className="mt-4 shrink-0 overflow-hidden rounded-xl border border-meadow-200 bg-meadow-50/50 p-5 shadow-adminSm ring-1 ring-black/5">
-        <div className="flex items-center gap-4">
-          <FileText className="h-6 w-6 shrink-0 text-meadow-600" />
-          <div className="min-w-0 flex-1">
-            <p className="text-lg text-gray-700 line-clamp-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <FileText className="h-6 w-6 shrink-0 text-meadow-600" />
+            <p className="min-w-0 flex-1 text-lg text-gray-700 line-clamp-2">
               Session cookie auth. If you see Unauthorized, sign in again from the login page.
             </p>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             <Link className={btn("primary")} href="/admin/dogs">Go to Dogs</Link>
             <Link className={btn("muted")} href="/dogs" target="_blank" rel="noopener">View site <ExternalLink size={12} /></Link>
           </div>

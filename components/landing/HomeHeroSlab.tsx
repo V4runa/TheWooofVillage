@@ -127,10 +127,7 @@ export function HomeHeroSlab({
 
               {/* Color, but still clean/legible */}
               <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-primary">
-                Meet your next best friend{" "}
-           
-                  today
-  
+                Meet your next best friend today
               </h1>
 
               <p className="mt-2 text-sm leading-relaxed text-ink-secondary max-w-[55ch]">

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Load the project's design-token config (Tailwind v4 does NOT auto-load it).
+   This is what makes the ink/meadow/sky/sun tokens, the shadow scale, and the
+   Fraunces/Manrope fonts actually render. */
+@config "../tailwind.config.ts";
+
 /* Exclude broken arbitrary variant that triggers CSS parse error (invalid selector) */
 @source not inline("[&>.sm\\:col-span-2]:sm:col-span-2");
 
@@ -19,6 +24,19 @@ body {
   /* warm charcoal — readable on cream; slightly lighter secondary for hierarchy */
   --ink-primary: 28 34 44;
   --ink-secondary: 62 76 98;
+  --text-muted: 110 122 140; /* quiet labels / placeholders */
+
+  /* Warm surfaces (used by bg-surface / bg-surface-light / bg-surface-muted) */
+  --surface-0: 255 246 238; /* deepest cream */
+  --surface-1: 255 248 242;
+  --surface-2: 255 250 244;
+
+  /* Hairline borders (ring-line / border-line) */
+  --line: 68 60 52;
+
+  /* Brand accents (tri-color identity, kept by request) */
+  --primary: 47 179 95;   /* meadow */
+  --secondary: 255 127 42; /* sun */
 
   /* indoor palette */
   --tint-warm: 255 240 224; /* cream */
@@ -41,11 +59,26 @@ html {
   isolation: isolate;
 
   background-color: rgb(246 238 228);
+}
+
+/**
+ * Fixed, viewport-sized background image layer.
+ * We use a `position: fixed` pseudo-element instead of
+ * `background-attachment: fixed`, which iOS Safari ignores (treating it as
+ * `scroll`) and which makes the photo look zoomed and janky on phones.
+ * This keeps the image stable and correctly sized on every device.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+
   background-image: var(--bg-image);
-  background-position: center top;
+  background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  background-attachment: fixed;
 
   /* Keep it bright + airy indoors */
   filter: brightness(1.08) saturate(1.04) contrast(1.02);
@@ -118,6 +151,8 @@ body {
   position: relative;
   background: transparent;
   color: rgb(var(--ink-primary));
+  font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -133,7 +168,9 @@ h3,
 h4,
 h5,
 h6 {
-  letter-spacing: -0.03em;
+  font-family: var(--font-display), Fraunces, ui-serif, Georgia, "Times New Roman",
+    serif;
+  letter-spacing: -0.02em;
   font-weight: 800;
   color: rgb(var(--ink-primary));
 }

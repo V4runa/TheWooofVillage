@@ -115,8 +115,8 @@ export function DogTile({ dog, dense = true }: Props) {
           ].join(" ")}
         >
           <div className="min-w-0">
-            {/* Name gets premium gradient ink */}
-            <h3 className="truncate text-[15px] font-extrabold tracking-tight bg-clip-text text-transparent bg-[linear-gradient(90deg,rgba(120,72,38,1),rgba(79,156,255,0.85))]">
+            {/* Solid ink name — cleaner + more legible than gradient text at small sizes */}
+            <h3 className="truncate text-base font-extrabold tracking-tight text-ink-primary">
               {dog.name}
             </h3>
 

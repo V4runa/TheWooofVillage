@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase/client";
 
 import { Container } from "@/components/ui/Container";
 import { LandingHeader } from "@/components/landing/LandingHeader";
+import { SiteFooter } from "@/components/landing/SiteFooter";
 
 import type { DogImage, DogRow, Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
@@ -346,9 +347,6 @@ export default function DogDetailClient() {
     }
   }
 
-  // Equal height on desktop
-  const heroHeight = "lg:h-[640px]";
-
   return (
     <main className="min-h-screen">
       <LandingHeader pupsAnchorId="pups" cta={{ label: "All puppies →", href: "/dogs" }} />
@@ -422,7 +420,7 @@ export default function DogDetailClient() {
             {/* showroom shell */}
             <div
               className={[
-                "relative rounded-[44px]",
+                "relative rounded-3xl sm:rounded-[44px]",
                 "bg-[rgba(255,248,242,0.62)]",
                 "border border-amber-950/14",
                 "ring-1 ring-inset ring-white/12",
@@ -444,7 +442,7 @@ export default function DogDetailClient() {
               ) : (
                 <>
                   {/* HERO ROW */}
-                  <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 lg:items-stretch">
+                  <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 lg:items-start">
                     {/* Left: gallery */}
                     <section className="lg:col-span-8">
                       <div className={softPanel("overflow-hidden")}>
@@ -518,7 +516,7 @@ export default function DogDetailClient() {
 
                     {/* Right: calm info rail */}
                     <section className="lg:col-span-4">
-                      <div className={softPanel(["p-6", "flex flex-col", heroHeight].join(" "))}>
+                      <div className={softPanel("p-6")}>
                         <div>
                           <div className="text-sm text-ink-secondary">
                             {[
@@ -556,8 +554,8 @@ export default function DogDetailClient() {
                           ) : null}
                         </div>
 
-                        <div className="mt-5 flex-1 overflow-hidden">
-                          <div className="h-full overflow-y-auto pr-1">
+                        <div className="mt-5">
+                          <div>
                             {dog.description ? (
                               <p className="text-sm leading-relaxed text-ink-secondary">
                                 {dog.description}
@@ -775,6 +773,8 @@ export default function DogDetailClient() {
           </div>
         </section>
       </Container>
+
+      <SiteFooter />
 
       <style jsx global>{`
         @keyframes woofSheen {

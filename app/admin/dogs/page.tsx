@@ -13,7 +13,7 @@ export default function AdminDogsPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
       {toast ? (
         <div className={`${toastClass} shrink-0`}>
           <span className="text-base" aria-hidden>✅</span>

@@ -139,6 +139,11 @@ export default function DogDetailClient() {
   const [draftMessage, setDraftMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Inline feedback shown right at the reservation form (not far away at the top).
+  const [reserveStatus, setReserveStatus] = useState<
+    { ok: boolean; text: string } | null
+  >(null);
+
   const deposit = useMemo(
     () => moneyFromCents(dog?.deposit_amount_cents),
     [dog?.deposit_amount_cents]
@@ -167,6 +172,17 @@ export default function DogDetailClient() {
   const images = useMemo(() => allImages(dog), [dog]);
   const primary = useMemo(() => bestPrimaryImage(dog), [dog]);
   const selected = selectedImage || primary;
+
+  const currentIndex = useMemo(() => {
+    const idx = images.findIndex((i) => i.url === selected);
+    return idx < 0 ? 0 : idx;
+  }, [images, selected]);
+
+  function stepImage(delta: number) {
+    if (images.length < 2) return;
+    const next = (currentIndex + delta + images.length) % images.length;
+    setSelectedImage(images[next].url);
+  }
 
   const phone = merchant?.phone?.trim() || null;
   const smsHref = phone ? `sms:${phone}` : null;
@@ -237,12 +253,15 @@ export default function DogDetailClient() {
     const payment_method = draftMethod.trim();
 
     if (!buyer_name || !buyer_phone || !payment_method) {
-      setNote("Please add name, phone, and payment method.");
+      setReserveStatus({
+        ok: false,
+        text: "Please add your name, phone, and payment method.",
+      });
       return;
     }
 
     setSubmitting(true);
-    setNote(null);
+    setReserveStatus(null);
 
     const payload = {
       dog_id: dog.id,
@@ -264,12 +283,18 @@ export default function DogDetailClient() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json?.ok) {
-        setNote(json?.error || "Could not submit reservation request.");
+        setReserveStatus({
+          ok: false,
+          text: json?.error || "Could not submit your request. Please try again.",
+        });
         setSubmitting(false);
         return;
       }
 
-      setNote("Request sent. Text or call to confirm your reservation.");
+      setReserveStatus({
+        ok: true,
+        text: "Request sent! Text or call to confirm your reservation.",
+      });
       setSubmitting(false);
 
       setDraftName("");
@@ -278,7 +303,10 @@ export default function DogDetailClient() {
       setDraftTxn("");
       setDraftMessage("");
     } catch (e: any) {
-      setNote(e?.message || "Could not submit reservation request.");
+      setReserveStatus({
+        ok: false,
+        text: e?.message || "Could not submit your request. Please try again.",
+      });
       setSubmitting(false);
     }
   }
@@ -381,63 +409,98 @@ export default function DogDetailClient() {
                     {/* Left: gallery */}
                     <section className="lg:col-span-8">
                       <div className={softPanel("overflow-hidden")}>
-                        <div className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
-                          <div className="relative aspect-[4/3] lg:aspect-[3/2]">
+                        <div className="group/gallery relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+                          {/* Height is capped so the viewer is never gigantic on phones,
+                              and scales up gracefully on larger screens. */}
+                          <div className="relative h-[clamp(260px,46vh,460px)] lg:h-[clamp(360px,52vh,580px)]">
                             {selected ? (
-                              <Image
-                                src={selected}
-                                alt={dog.name}
-                                fill
-                                priority
-                                sizes="(max-width: 1024px) 100vw, 66vw"
-                                className="object-contain"
-                              />
+                              <>
+                                {/* Blurred backdrop fills the letterbox bands left by
+                                    object-contain so photos of any ratio look intentional. */}
+                                <Image
+                                  src={selected}
+                                  alt=""
+                                  aria-hidden
+                                  fill
+                                  sizes="(max-width: 1024px) 100vw, 66vw"
+                                  className="object-cover scale-110 blur-2xl opacity-40"
+                                />
+                                <Image
+                                  src={selected}
+                                  alt={dog.name}
+                                  fill
+                                  priority
+                                  sizes="(max-width: 1024px) 100vw, 66vw"
+                                  className="relative object-contain"
+                                />
+                              </>
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-amber-950/85">
                                 No photo available
                               </div>
                             )}
-                          </div>
 
-                          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink-primary border border-amber-950/10">
-                              Photos
-                            </span>
-                            {images.length > 0 ? (
-                              <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-ink-secondary border border-amber-950/10">
-                                {Math.max(1, images.findIndex((i) => i.url === selected) + 1)}/
-                                {images.length}
-                              </span>
+                            {/* Prev / next controls (only when there's more than one) */}
+                            {images.length > 1 ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => stepImage(-1)}
+                                  aria-label="Previous photo"
+                                  className="absolute left-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-meadow-500"
+                                >
+                                  <span aria-hidden className="text-lg leading-none">‹</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => stepImage(1)}
+                                  aria-label="Next photo"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-meadow-500"
+                                >
+                                  <span aria-hidden className="text-lg leading-none">›</span>
+                                </button>
+                              </>
                             ) : null}
                           </div>
+
+                          {/* Photo counter */}
+                          {images.length > 0 ? (
+                            <div className="absolute right-3 top-3">
+                              <span className="inline-flex items-center rounded-full bg-black/45 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                                {currentIndex + 1} / {images.length}
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
 
                         {/* thumbnails */}
                         {images.length > 1 ? (
-                          <div className="relative border-t border-amber-950/8 bg-[rgba(255,248,242,0.62)] p-4">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[rgba(255,248,242,0.95)] to-transparent" />
-                            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[rgba(255,248,242,0.95)] to-transparent" />
-
-                            <div className="flex gap-3 overflow-x-auto pr-6">
-                              {images.map((img) => {
+                          <div className="border-t border-amber-950/8 bg-[rgba(255,248,242,0.62)] p-3 sm:p-4">
+                            <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:thin]">
+                              {images.map((img, i) => {
                                 const active = img.url === selected;
                                 return (
                                   <button
+                                    type="button"
                                     key={img.url}
                                     onClick={() => setSelectedImage(img.url)}
                                     className={[
-                                      "shrink-0 relative overflow-hidden rounded-2xl ring-1 transition bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]",
-                                      active ? "ring-black/25" : "ring-black/10 hover:ring-black/18",
+                                      "shrink-0 relative overflow-hidden rounded-xl transition",
+                                      "focus:outline-none focus:ring-2 focus:ring-meadow-500 focus:ring-offset-1",
+                                      active
+                                        ? "ring-2 ring-meadow-500 ring-offset-1"
+                                        : "ring-1 ring-black/10 hover:ring-black/25 opacity-80 hover:opacity-100",
                                     ].join(" ")}
-                                    aria-label="Select image"
+                                    aria-label={`Show photo ${i + 1}`}
+                                    aria-current={active ? "true" : undefined}
                                   >
-                                    <div className="relative aspect-[4/3] w-28">
+                                    <div className="relative h-16 w-20 sm:h-[72px] sm:w-24 bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
                                       <Image
                                         src={img.url}
                                         alt={img.alt}
                                         fill
-                                        sizes="112px"
-                                        className="object-contain"
+                                        sizes="96px"
+                                        className="object-cover"
                                       />
                                     </div>
                                   </button>
@@ -758,7 +821,26 @@ export default function DogDetailClient() {
                                     />
                                   </div>
 
+                                  {reserveStatus ? (
+                                    <div
+                                      role="status"
+                                      aria-live="polite"
+                                      className={[
+                                        "flex items-start gap-2 rounded-xl px-3.5 py-3 text-sm font-semibold",
+                                        reserveStatus.ok
+                                          ? "bg-emerald-500/12 text-emerald-900 border border-emerald-600/20"
+                                          : "bg-rose-500/10 text-rose-900 border border-rose-600/20",
+                                      ].join(" ")}
+                                    >
+                                      <span aria-hidden className="mt-px text-base leading-none">
+                                        {reserveStatus.ok ? "✓" : "!"}
+                                      </span>
+                                      <span>{reserveStatus.text}</span>
+                                    </div>
+                                  ) : null}
+
                                   <button
+                                    type="button"
                                     disabled={submitting}
                                     onClick={submitReservationRequest}
                                     className={[

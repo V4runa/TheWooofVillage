@@ -17,16 +17,17 @@ export function DogsGrid({
 
   /**
    * Layout:
-   * - Keep explicit cols for predictable breakpoints
-   * - Use auto-fit on 2xl+ so 12+ never looks “stuck” or sparse on ultrawide
+   * - auto-fit packs as many cards as fit and wraps the rest, so it scales
+   *   from 1 to many listings without hardcoded breakpoints.
+   * - The `minmax(240px, 340px)` cap is the important bit: cards are bounded,
+   *   so a single listing can NEVER stretch to full width (which made the
+   *   image enormous). `justify-center` keeps a small number of cards balanced
+   *   instead of clinging to the left edge.
    */
-  const gridClass =
-    [
-      "grid gap-4 items-stretch",
-      "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-      // 2xl+: auto-fit gives us a “more than 4” layout naturally without hardcoding 5/6/7
-      "2xl:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]",
-    ].join(" ");
+  const gridClass = [
+    "grid gap-4 sm:gap-5 items-stretch justify-center",
+    "[grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),340px))]",
+  ].join(" ");
 
   // Don’t allow ridiculous skeleton spam if someone passes count=100
   const skeletonCount = Math.min(safeCount || 12, 20);

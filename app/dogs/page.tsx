@@ -31,12 +31,13 @@ function ShowroomGrid({
   const safeCount = Math.max(0, Math.floor(count));
   const visible = dogs.slice(0, safeCount);
 
+  // Capped, centered auto-fit so the layout looks balanced whether there is
+  // 1 puppy or 20 — cards never stretch huge, and a lone card stays tidy.
   const gridClass = [
     "grid",
     "gap-3 sm:gap-4 lg:gap-5",
-    "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-    "2xl:grid-cols-4",
-    "items-stretch",
+    "items-stretch justify-center",
+    "[grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),340px))]",
   ].join(" ");
 
   const skeletonCount = Math.min(safeCount || 12, 20);

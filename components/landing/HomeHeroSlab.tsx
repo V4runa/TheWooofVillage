@@ -118,7 +118,7 @@ export function HomeHeroSlab({
 
         {/* TOP: hero content (keep calm; let global film do the mood) */}
         <div className="p-6 sm:p-7">
-          <div className="grid gap-6 lg:grid-cols-12 lg:items-center">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">
             <div className="lg:col-span-4">
               {/* Warm eyebrow, but not muddy */}
               <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
@@ -173,7 +173,7 @@ export function HomeHeroSlab({
 
         {/* BOTTOM: unified reserve band (warm but airy) */}
         <div className="border-t border-amber-950/12 bg-[rgba(255,250,244,0.82)]">
-          <div className="grid gap-0 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
             {/* Contact */}
             <div className="lg:col-span-4 p-5">
               <div className="flex items-start justify-between gap-3">

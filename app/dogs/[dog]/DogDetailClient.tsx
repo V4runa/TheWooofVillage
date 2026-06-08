@@ -339,7 +339,7 @@ export default function DogDetailClient() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen w-full overflow-x-hidden">
       <LandingHeader pupsAnchorId="pups" cta={{ label: "All puppies →", href: "/dogs" }} />
 
       <Container size="xl" className="pb-12 sm:pb-14 lg:pb-16">
@@ -415,7 +415,7 @@ export default function DogDetailClient() {
                 "bg-[rgba(255,250,244,0.92)]",
                 "border border-amber-950/10",
                 "shadow-[0_16px_44px_-30px_rgba(17,24,39,0.4)]",
-                "p-3 sm:p-4 lg:p-5",
+                "p-2 sm:p-4 lg:p-5",
               ].join(" ")}
             >
               {loading ? (
@@ -431,18 +431,27 @@ export default function DogDetailClient() {
                 </div>
               ) : (
                 <>
-                  {/* HERO ROW */}
-                  <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 lg:items-start">
+                  {/* HERO ROW
+                      `grid-cols-1` on mobile is critical: a bare `grid` flows
+                      items into an implicit `auto` column that grows to its
+                      widest child (the thumbnail strip), pushing the gallery
+                      past the viewport. `grid-cols-1` is minmax(0,1fr), which
+                      stays at 100% and lets inner content scroll/shrink. */}
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-6 lg:items-start">
                     {/* Left: gallery */}
-                    <section className="lg:col-span-8">
-                      <div className={softPanel("overflow-hidden")}>
-                        <div className="group/gallery relative w-full select-none overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
-                          {/* Height is capped so the viewer is never gigantic on phones,
-                              and scales up gracefully on larger screens.
+                    <section className="min-w-0 lg:col-span-8">
+                      <div className={softPanel("w-full max-w-full overflow-hidden")}>
+                        <div className="group/gallery relative w-full max-w-full select-none overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+                          {/* The viewer is a width-driven aspect-ratio box, so its
+                              height is derived from the column width and it can NEVER
+                              be wider than its parent — this is what keeps the gallery
+                              from bleeding off the right edge on phones. A taller ratio
+                              on phones (4:3) suits portrait puppy photos; it widens out
+                              on larger screens.
                               `touch-pan-y` keeps vertical page scroll natural while we
                               handle horizontal swipes ourselves. */}
                           <div
-                            className="relative h-[clamp(240px,52vh,460px)] touch-pan-y lg:h-[clamp(360px,52vh,580px)]"
+                            className="relative aspect-[4/3] w-full max-w-full touch-pan-y sm:aspect-[3/2] lg:aspect-[16/10]"
                             onTouchStart={onTouchStart}
                             onTouchEnd={onTouchEnd}
                           >
@@ -551,7 +560,7 @@ export default function DogDetailClient() {
                     </section>
 
                     {/* Right: calm info rail */}
-                    <section className="lg:col-span-4">
+                    <section className="min-w-0 lg:col-span-4">
                       <div className={softPanel("p-6")}>
                         <div>
                           <div className="text-sm text-ink-secondary">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { getSiteUrl, SITE_NAME } from "@/lib/site";
 import "./globals.css";
@@ -37,6 +37,12 @@ export const metadata: Metadata = {
     title: "TheWooofVillage - Meet Your Next Best Friend",
     description: siteDescription,
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -12,10 +12,13 @@ import {
   ExternalLink,
   Home,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 
 import { Container } from "@/components/ui/Container";
 import { softShell, navItem } from "@/components/admin/AdminUi";
+import { ToastProvider } from "@/components/admin/Toast";
+import { ConfirmProvider } from "@/components/admin/ConfirmDialog";
 
 type NavItem = {
   label: string;
@@ -78,11 +81,31 @@ export function AdminShell({
   const title = titleProp ?? meta.title;
   const resolvedSubtitle = subtitle ?? meta.subtitle;
   const isDogsPage = pathname.startsWith("/admin/dogs");
+  const isLoginPage = pathname === "/admin/login";
+
+  const [signingOut, setSigningOut] = React.useState(false);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {
+      // Even if the request fails, fall through to the login page; the cookie
+      // is HttpOnly so the only reliable way to clear it is the server route,
+      // but navigating away at least drops the admin session locally.
+    }
+    // Hard navigation clears the client router cache so no stale admin RSC
+    // payloads linger after sign-out.
+    window.location.replace("/admin/login");
+  }
 
   // Desktop: fixed viewport height app-shell (no body scroll).
   // Mobile/tablet: natural document scroll using dvh so browser chrome never
   // cuts off content (e.g. Save buttons) the way 100vh / h-screen does.
   return (
+    <ToastProvider>
+      <ConfirmProvider>
     <div
       className="relative flex min-h-dvh flex-col overflow-x-hidden bg-gradient-to-br from-stone-100 via-meadow-50/40 to-sky-50/30 lg:h-dvh lg:max-h-dvh lg:overflow-hidden"
       data-admin="true"
@@ -149,6 +172,17 @@ export function AdminShell({
                 <span className="hidden xs:inline">Back to site</span>
                 <ChevronRight size={16} />
               </Link>
+              {!isLoginPage ? (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-[19px] font-semibold text-red-700 shadow-adminSm ring-1 ring-red-200 transition-all hover:bg-red-50 hover:ring-red-300 hover:shadow-admin disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden xs:inline">{signingOut ? "Signing out…" : "Sign out"}</span>
+                </button>
+              ) : null}
             </div>
           </div>
         </Container>
@@ -211,5 +245,7 @@ export function AdminShell({
         </Container>
       </main>
     </div>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }

@@ -11,17 +11,15 @@ import type {
 
 import { adminJson } from "@/lib/admin/apiClient";
 import { softShell, btn, pill, formatDate, alertErrorClass, statusBadge } from "@/components/admin/AdminUi";
+import { useToast } from "@/components/admin/Toast";
 
 type StatusFilter = ReservationRequestStatus | "all";
 
 /* -----------------------------
    Reservations Panel
 ------------------------------ */
-export function ReservationsPanel({
-  onToast,
-}: {
-  onToast: (msg: string) => void;
-}) {
+export function ReservationsPanel() {
+  const { showToast } = useToast();
   const [status, setStatus] = React.useState<StatusFilter>("new");
   const [items, setItems] = React.useState<ReservationRequest[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -62,9 +60,11 @@ export function ReservationsPanel({
       );
 
       setItems((prev) => prev.map((r) => (r.id === id ? data.reservation : r)));
-      onToast(`Marked as ${next}.`);
+      showToast(`Marked as ${next}.`);
     } catch (e: any) {
-      setError(e?.message || "Update failed.");
+      const msg = e?.message || "Update failed.";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 
@@ -203,9 +203,9 @@ export function ReservationsPanel({
                     </div>
                   </div>
 
-                  <div className="shrink-0 flex flex-wrap gap-2 sm:flex-col sm:items-end sm:min-w-[140px]">
+                  <div className="shrink-0 grid grid-cols-1 gap-2 sm:flex sm:flex-col sm:items-stretch sm:min-w-[150px]">
                     <button
-                      className={`${btn("muted")} ${r.status === "new" ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`${btn("muted")} w-full ${r.status === "new" ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => updateStatus(r.id, "new")}
                       disabled={r.status === "new"}
                     >
@@ -213,7 +213,7 @@ export function ReservationsPanel({
                       Mark new
                     </button>
                     <button
-                      className={`${btn("primary")} ${r.status === "contacted" ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`${btn("primary")} w-full ${r.status === "contacted" ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => updateStatus(r.id, "contacted")}
                       disabled={r.status === "contacted"}
                     >
@@ -221,7 +221,7 @@ export function ReservationsPanel({
                       Contacted
                     </button>
                     <button
-                      className={`${btn("muted")} ${r.status === "closed" ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`${btn("muted")} w-full ${r.status === "closed" ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => updateStatus(r.id, "closed")}
                       disabled={r.status === "closed"}
                     >

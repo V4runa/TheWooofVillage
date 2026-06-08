@@ -42,10 +42,8 @@ import {
   statusBadge,
   ADMIN_TOPPER_STYLES,
 } from "@/components/admin/AdminUi";
-
-type Props = {
-  onToast: (msg: string) => void;
-};
+import { useToast } from "@/components/admin/Toast";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 type DogStatusFilter = "all" | "available" | "reserved" | "sold";
 
@@ -58,7 +56,9 @@ type DogStatusFilter = "all" | "available" | "reserved" | "sold";
  *
  * Auth: cookie-based admin session (no passcode headers, no localStorage)
  */
-export function DogsPanel({ onToast }: Props) {
+export function DogsPanel() {
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -256,11 +256,12 @@ export function DogsPanel({ onToast }: Props) {
       }
 
       if (uploadFailures > 0) {
-        onToast(
-          `Listing created. ${uploadFailures} photo${uploadFailures === 1 ? "" : "s"} couldn't upload — add them again below.`
+        showToast(
+          `Listing created. ${uploadFailures} photo${uploadFailures === 1 ? "" : "s"} couldn't upload — add them again below.`,
+          "error"
         );
       } else {
-        onToast("Listing created.");
+        showToast("Listing created.");
       }
 
       setCreateModalOpen(false);
@@ -285,7 +286,9 @@ export function DogsPanel({ onToast }: Props) {
 
       if (createdId) setSelectedId(createdId);
     } catch (e: any) {
-      setError(e?.message || "Could not create the listing. Please try again.");
+      const msg = e?.message || "Could not create the listing. Please try again.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setCreating(false);
     }
@@ -328,9 +331,11 @@ export function DogsPanel({ onToast }: Props) {
         await load();
       }
 
-      onToast("Saved.");
+      showToast("Saved.");
     } catch (e: any) {
-      setError(e?.message || "Save failed.");
+      const msg = e?.message || "Save failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }
@@ -339,9 +344,12 @@ export function DogsPanel({ onToast }: Props) {
   async function deleteDog() {
     if (!selected) return;
 
-    const ok = window.confirm(
-      `Delete "${selected.name}"?\n\nThis removes the dog and all images in storage for this dog.`
-    );
+    const ok = await confirm({
+      title: `Delete "${selected.name}"?`,
+      message: "This removes the dog and all of its photos from storage. This can't be undone.",
+      confirmLabel: "Delete dog",
+      danger: true,
+    });
     if (!ok) return;
 
     setDeleting(true);
@@ -349,11 +357,13 @@ export function DogsPanel({ onToast }: Props) {
 
     try {
       await adminJson<{ ok: true }>(`/api/admin/dogs/${selected.id}`, { method: "DELETE" });
-      onToast("Dog deleted.");
+      showToast("Dog deleted.");
       setSelectedId(null);
       await load();
     } catch (e: any) {
-      setError(e?.message || "Delete failed.");
+      const msg = e?.message || "Delete failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setDeleting(false);
     }
@@ -373,7 +383,7 @@ export function DogsPanel({ onToast }: Props) {
     setEReadyDate(selected.ready_date || "");
     setESortOrder(selected.sort_order == null ? "" : String(selected.sort_order));
     setEDescription(selected.description || "");
-    onToast("Reverted.");
+    showToast("Reverted.");
   }
 
   // Sorted images for the currently selected dog.
@@ -416,10 +426,12 @@ export function DogsPanel({ onToast }: Props) {
         }
       }
 
-      onToast(files.length > 1 ? "Photos uploaded." : "Photo uploaded.");
+      showToast(files.length > 1 ? "Photos uploaded." : "Photo uploaded.");
       await load();
     } catch (e: any) {
-      setError(e?.message || "Upload failed.");
+      const msg = e?.message || "Upload failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setUploading(false);
     }
@@ -427,7 +439,13 @@ export function DogsPanel({ onToast }: Props) {
 
   async function deleteImage(imageId: string) {
     if (!selected) return;
-    if (!window.confirm("Delete this photo? This can't be undone.")) return;
+    const ok = await confirm({
+      title: "Delete this photo?",
+      message: "This permanently removes the photo from storage. This can't be undone.",
+      confirmLabel: "Delete photo",
+      danger: true,
+    });
+    if (!ok) return;
 
     setImgBusyKey(imageId);
     setError(null);
@@ -436,10 +454,12 @@ export function DogsPanel({ onToast }: Props) {
         `/api/admin/dogs/${selected.id}/images?imageId=${encodeURIComponent(imageId)}`,
         { method: "DELETE" }
       );
-      onToast("Photo deleted.");
+      showToast("Photo deleted.");
       await load();
     } catch (e: any) {
-      setError(e?.message || "Delete failed.");
+      const msg = e?.message || "Delete failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setImgBusyKey(null);
     }
@@ -460,9 +480,11 @@ export function DogsPanel({ onToast }: Props) {
       } else {
         await load();
       }
-      onToast("Cover photo updated.");
+      showToast("Cover photo updated.");
     } catch (e: any) {
-      setError(e?.message || "Could not set cover.");
+      const msg = e?.message || "Could not set cover.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setImgBusyKey(null);
     }
@@ -487,7 +509,9 @@ export function DogsPanel({ onToast }: Props) {
       });
       await load();
     } catch (e: any) {
-      setError(e?.message || "Reorder failed.");
+      const msg = e?.message || "Reorder failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setImgBusyKey(null);
     }
@@ -916,7 +940,7 @@ export function DogsPanel({ onToast }: Props) {
                         setCAlt("");
                         setCFiles(null);
                         setError(null);
-                        onToast("Cleared.");
+                        showToast("Cleared.");
                       }}
                     >
                       <X size={14} />

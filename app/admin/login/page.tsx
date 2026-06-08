@@ -2,9 +2,19 @@
 
 import * as React from "react";
 import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { softShell, btn, inputClass, alertErrorClass } from "@/components/admin/AdminUi";
+
+/**
+ * Only allow same-origin, path-only redirects to avoid open-redirect issues
+ * (the `next` param is user-controllable via the URL).
+ */
+function safeNextPath(next: string | null): string {
+  if (!next) return "/admin";
+  if (!next.startsWith("/") || next.startsWith("//")) return "/admin";
+  return next;
+}
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -19,10 +29,9 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 function AdminLoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const next = searchParams.get("next") || "/admin";
+  const next = safeNextPath(searchParams.get("next"));
 
   const [passcode, setPasscode] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -42,8 +51,13 @@ function AdminLoginForm() {
     try {
       await postJson<{ ok: true }>("/api/admin/login", { passcode: v });
 
-      router.replace(next);
-      router.refresh();
+      // Hard navigation (not the client router) so the request carries the
+      // freshly-set session cookie and bypasses Next.js's stale client-side
+      // router cache, which otherwise still holds the middleware's
+      // "redirect to /admin/login" response from the initial visit. Using the
+      // client router here caused the first login attempt to bounce back to the
+      // login page / hang until a manual refresh cleared the cache.
+      window.location.replace(next);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed.");
       setLoading(false);
@@ -81,7 +95,9 @@ function AdminLoginForm() {
             <button
               className={btn("muted")}
               type="button"
-              onClick={() => router.push("/")}
+              onClick={() => {
+                window.location.href = "/";
+              }}
               disabled={loading}
             >
               Cancel

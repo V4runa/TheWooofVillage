@@ -7,15 +7,15 @@ import { RefreshCw, MessageSquare, CheckCircle2, XCircle, Clock, Star, Trash2, I
 import type { Testimonial, TestimonialStatus } from "@/types/testimonials";
 import { adminJson } from "@/lib/admin/apiClient";
 import { softShell, btn, pill, formatDate, alertErrorClass, statusBadge } from "@/components/admin/AdminUi";
+import { useToast } from "@/components/admin/Toast";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 /* -----------------------------
    Testimonials Panel
 ------------------------------ */
-export function TestimonialsPanel({
-  onToast,
-}: {
-  onToast: (msg: string) => void;
-}) {
+export function TestimonialsPanel() {
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -60,14 +60,21 @@ export function TestimonialsPanel({
       );
 
       setItems((prev) => prev.map((t) => (t.id === id ? data.testimonial : t)));
-      onToast(`Set to ${next}.`);
+      showToast(`Set to ${next}.`);
     } catch (e: any) {
-      setError(e?.message || "Update failed.");
+      const msg = e?.message || "Update failed.";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 
   async function deleteItem(id: string) {
-    const ok = window.confirm("Delete this testimonial? This cannot be undone.");
+    const ok = await confirm({
+      title: "Delete this testimonial?",
+      message: "This permanently removes the testimonial and its photos. This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
     if (!ok) return;
 
     try {
@@ -76,9 +83,11 @@ export function TestimonialsPanel({
       });
 
       setItems((prev) => prev.filter((t) => t.id !== id));
-      onToast("Deleted.");
+      showToast("Testimonial deleted.");
     } catch (e: any) {
-      setError(e?.message || "Delete failed.");
+      const msg = e?.message || "Delete failed.";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 
@@ -192,9 +201,9 @@ export function TestimonialsPanel({
                   </div>
                 </div>
 
-                <div className="shrink-0 flex flex-wrap gap-2 sm:flex-col sm:items-end sm:min-w-[140px]">
+                <div className="shrink-0 grid grid-cols-1 gap-2 sm:flex sm:flex-col sm:items-stretch sm:min-w-[150px]">
                   <button
-                    className={`${btn("primary")} flex items-center gap-2 ${t.status === "approved" ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`${btn("primary")} w-full flex items-center justify-center gap-2 ${t.status === "approved" ? "opacity-50 cursor-not-allowed" : ""}`}
                     onClick={() => setItemStatus(t.id, "approved")}
                     disabled={t.status === "approved"}
                   >
@@ -202,14 +211,14 @@ export function TestimonialsPanel({
                     Approve
                   </button>
                   <button
-                    className={`${btn("muted")} flex items-center gap-2 ${t.status === "rejected" ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`${btn("muted")} w-full flex items-center justify-center gap-2 ${t.status === "rejected" ? "opacity-50 cursor-not-allowed" : ""}`}
                     onClick={() => setItemStatus(t.id, "rejected")}
                     disabled={t.status === "rejected"}
                   >
                     <XCircle size={14} />
                     Reject
                   </button>
-                  <button className={`${btn("danger")} flex items-center gap-2`} onClick={() => deleteItem(t.id)}>
+                  <button className={`${btn("danger")} w-full flex items-center justify-center gap-2`} onClick={() => deleteItem(t.id)}>
                     <Trash2 size={14} />
                     Delete
                   </button>

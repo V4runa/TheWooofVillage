@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -182,6 +182,33 @@ export default function DogDetailClient() {
     if (images.length < 2) return;
     const next = (currentIndex + delta + images.length) % images.length;
     setSelectedImage(images[next].url);
+  }
+
+  // Touch swipe support for the main viewer (phones/tablets). We track the
+  // horizontal travel of a single touch and advance the gallery when the swipe
+  // clears a small threshold, so the gallery feels native on mobile.
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchStartX.current = t.clientX;
+    touchStartY.current = t.clientY;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current == null || touchStartY.current == null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX.current;
+    const dy = t.clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // Only treat as a swipe when the gesture is mostly horizontal, so vertical
+    // page scrolling is never hijacked.
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      stepImage(dx < 0 ? 1 : -1);
+    }
   }
 
   const phone = merchant?.phone?.trim() || null;
@@ -409,10 +436,16 @@ export default function DogDetailClient() {
                     {/* Left: gallery */}
                     <section className="lg:col-span-8">
                       <div className={softPanel("overflow-hidden")}>
-                        <div className="group/gallery relative w-full overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+                        <div className="group/gallery relative w-full select-none overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
                           {/* Height is capped so the viewer is never gigantic on phones,
-                              and scales up gracefully on larger screens. */}
-                          <div className="relative h-[clamp(260px,46vh,460px)] lg:h-[clamp(360px,52vh,580px)]">
+                              and scales up gracefully on larger screens.
+                              `touch-pan-y` keeps vertical page scroll natural while we
+                              handle horizontal swipes ourselves. */}
+                          <div
+                            className="relative h-[clamp(240px,52vh,460px)] touch-pan-y lg:h-[clamp(360px,52vh,580px)]"
+                            onTouchStart={onTouchStart}
+                            onTouchEnd={onTouchEnd}
+                          >
                             {selected ? (
                               <>
                                 {/* Blurred backdrop fills the letterbox bands left by
@@ -424,6 +457,7 @@ export default function DogDetailClient() {
                                   fill
                                   sizes="(max-width: 1024px) 100vw, 66vw"
                                   className="object-cover scale-110 blur-2xl opacity-40"
+                                  draggable={false}
                                 />
                                 <Image
                                   src={selected}
@@ -432,6 +466,7 @@ export default function DogDetailClient() {
                                   priority
                                   sizes="(max-width: 1024px) 100vw, 66vw"
                                   className="relative object-contain"
+                                  draggable={false}
                                 />
                               </>
                             ) : (
@@ -440,24 +475,25 @@ export default function DogDetailClient() {
                               </div>
                             )}
 
-                            {/* Prev / next controls (only when there's more than one) */}
+                            {/* Prev / next controls (only when there's more than one).
+                                Sized to a 44px touch target so they're easy to tap on phones. */}
                             {images.length > 1 ? (
                               <>
                                 <button
                                   type="button"
                                   onClick={() => stepImage(-1)}
                                   aria-label="Previous photo"
-                                  className="absolute left-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-meadow-500"
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white active:scale-95 focus:outline-none focus:ring-2 focus:ring-meadow-500 sm:left-3"
                                 >
-                                  <span aria-hidden className="text-lg leading-none">‹</span>
+                                  <span aria-hidden className="text-xl leading-none">‹</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => stepImage(1)}
                                   aria-label="Next photo"
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-meadow-500"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/80 text-ink-primary border border-amber-950/12 shadow-soft backdrop-blur-sm transition hover:bg-white active:scale-95 focus:outline-none focus:ring-2 focus:ring-meadow-500 sm:right-3"
                                 >
-                                  <span aria-hidden className="text-lg leading-none">›</span>
+                                  <span aria-hidden className="text-xl leading-none">›</span>
                                 </button>
                               </>
                             ) : null}
@@ -473,10 +509,11 @@ export default function DogDetailClient() {
                           ) : null}
                         </div>
 
-                        {/* thumbnails */}
+                        {/* thumbnails — horizontally scrollable with snap + momentum
+                            scrolling so the strip is comfortable to flick through on phones. */}
                         {images.length > 1 ? (
                           <div className="border-t border-amber-950/8 bg-[rgba(255,248,242,0.62)] p-3 sm:p-4">
-                            <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:thin]">
+                            <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
                               {images.map((img, i) => {
                                 const active = img.url === selected;
                                 return (
@@ -485,7 +522,7 @@ export default function DogDetailClient() {
                                     key={img.url}
                                     onClick={() => setSelectedImage(img.url)}
                                     className={[
-                                      "shrink-0 relative overflow-hidden rounded-xl transition",
+                                      "shrink-0 snap-start relative overflow-hidden rounded-xl transition",
                                       "focus:outline-none focus:ring-2 focus:ring-meadow-500 focus:ring-offset-1",
                                       active
                                         ? "ring-2 ring-meadow-500 ring-offset-1"
@@ -494,13 +531,14 @@ export default function DogDetailClient() {
                                     aria-label={`Show photo ${i + 1}`}
                                     aria-current={active ? "true" : undefined}
                                   >
-                                    <div className="relative h-16 w-20 sm:h-[72px] sm:w-24 bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
+                                    <div className="relative h-[60px] w-[76px] sm:h-[72px] sm:w-24 bg-[linear-gradient(to_bottom,rgba(255,236,218,0.90),rgba(255,255,255,0.60))]">
                                       <Image
                                         src={img.url}
                                         alt={img.alt}
                                         fill
                                         sizes="96px"
                                         className="object-cover"
+                                        draggable={false}
                                       />
                                     </div>
                                   </button>

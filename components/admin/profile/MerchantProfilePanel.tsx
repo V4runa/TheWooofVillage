@@ -6,6 +6,7 @@ import { RefreshCw, Save, User, Phone, DollarSign, Share2, Pencil, X } from "luc
 import type { MerchantProfile } from "@/types/merchant";
 import { adminJson } from "@/lib/admin/apiClient";
 import { btn, formatDate, alertErrorClass, inputClass } from "@/components/admin/AdminUi";
+import { useToast } from "@/components/admin/Toast";
 
 function linkOrDash(url: string | null | undefined): React.ReactNode {
   if (!url?.trim()) return "—";
@@ -23,7 +24,8 @@ const sectionCard =
 /* -----------------------------
    Merchant Profile — Containerized sections + Edit modal (portal)
 ------------------------------ */
-export function MerchantProfilePanel({ onToast }: { onToast: (msg: string) => void }) {
+export function MerchantProfilePanel() {
+  const { showToast } = useToast();
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -131,9 +133,11 @@ export function MerchantProfilePanel({ onToast }: { onToast: (msg: string) => vo
       );
       setProfile(data.profile);
       setEditModalOpen(false);
-      onToast("Profile saved.");
+      showToast("Profile saved.");
     } catch (e: any) {
-      setError(e?.message || "Save failed.");
+      const msg = e?.message || "Save failed.";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }

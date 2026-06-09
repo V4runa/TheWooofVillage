@@ -30,6 +30,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { useToast } from "@/components/admin/Toast";
 import { parseCashtag, parseVenmoUser, parsePaypalUser } from "@/lib/payments";
+import { formatUsPhone } from "@/lib/format";
 
 type PayId = "venmo" | "cashapp" | "paypal" | "zelle";
 
@@ -218,7 +219,7 @@ export function MerchantProfilePanel() {
     setDisplayName(p?.display_name ?? "");
     setTagline(p?.tagline ?? "");
     setAbout(p?.about ?? "");
-    setPhone(p?.phone ?? "");
+    setPhone(formatUsPhone(p?.phone ?? ""));
     setInstagram(emptyIfExample(p?.instagram_url));
     setFacebook(emptyIfExample(p?.facebook_url));
     setTiktok(emptyIfExample(p?.tiktok_url));
@@ -517,7 +518,7 @@ export function MerchantProfilePanel() {
                       <input
                         id="merchant-phone"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => setPhone(formatUsPhone(e.target.value))}
                         type="tel"
                         inputMode="tel"
                         placeholder="(555) 123-4567"

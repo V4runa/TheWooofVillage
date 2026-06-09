@@ -12,6 +12,7 @@ import { SiteFooter } from "@/components/landing/SiteFooter";
 import type { Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
 import { buildPaymentOptions, type PaymentKind } from "@/lib/payments";
+import { formatUsPhone } from "@/lib/format";
 
 /* -----------------------------
    Helpers
@@ -875,7 +876,7 @@ export default function DogDetailClient() {
                                     <input
                                       id="rsv-phone"
                                       value={draftPhone}
-                                      onChange={(e) => setDraftPhone(e.target.value)}
+                                      onChange={(e) => setDraftPhone(formatUsPhone(e.target.value))}
                                       type="tel"
                                       inputMode="tel"
                                       autoComplete="tel"

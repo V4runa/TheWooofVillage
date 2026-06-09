@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/landing/SiteFooter";
 
 import type { Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
+import { buildPaymentOptions, type PaymentKind } from "@/lib/payments";
 
 /* -----------------------------
    Helpers
@@ -128,9 +129,6 @@ export default function DogDetailClient() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // One calm message slot (no extra UI)
-  const [note, setNote] = useState<string | null>(null);
-
   // Reserve panel (kept simple)
   const [draftName, setDraftName] = useState("");
   const [draftPhone, setDraftPhone] = useState("");
@@ -143,6 +141,9 @@ export default function DogDetailClient() {
   const [reserveStatus, setReserveStatus] = useState<
     { ok: boolean; text: string } | null
   >(null);
+
+  // Which amount the buyer is paying: a deposit or the full price.
+  const [amountKind, setAmountKind] = useState<PaymentKind>("deposit");
 
   const deposit = useMemo(
     () => moneyFromCents(dog?.deposit_amount_cents),
@@ -183,6 +184,43 @@ export default function DogDetailClient() {
     const next = (currentIndex + delta + images.length) % images.length;
     setSelectedImage(images[next].url);
   }
+
+  // ---- Payment amount + options -------------------------------------------
+  const depositCents =
+    dog?.deposit_amount_cents != null && dog.deposit_amount_cents > 0
+      ? dog.deposit_amount_cents
+      : null;
+  const priceCents =
+    dog?.price_amount_cents != null && dog.price_amount_cents > 0
+      ? dog.price_amount_cents
+      : null;
+  const hasDeposit = depositCents != null;
+  const hasPrice = priceCents != null;
+
+  // If the buyer picked "deposit" but only a full price exists, fall back.
+  const effectiveKind: PaymentKind =
+    amountKind === "deposit" && !hasDeposit && hasPrice ? "full" : amountKind;
+
+  const chosenAmountCents =
+    effectiveKind === "deposit" ? depositCents ?? 0 : priceCents ?? 0;
+  const chosenAmountLabel = moneyFromCents(chosenAmountCents);
+
+  const payOptions = useMemo(
+    () =>
+      buildPaymentOptions(merchant, {
+        amountCents: chosenAmountCents,
+        note: dog ? `Wooof: ${dog.name}` : undefined,
+      }),
+    [merchant, chosenAmountCents, dog]
+  );
+
+  // Default the amount toggle sensibly once the dog loads.
+  useEffect(() => {
+    if (!dog) return;
+    const d = dog.deposit_amount_cents ?? 0;
+    const p = dog.price_amount_cents ?? 0;
+    setAmountKind(d > 0 ? "deposit" : p > 0 ? "full" : "deposit");
+  }, [dog?.id]);
 
   const phone = merchant?.phone?.trim() || null;
   const smsHref = phone ? `sms:${phone}` : null;
@@ -263,6 +301,20 @@ export default function DogDetailClient() {
     setSubmitting(true);
     setReserveStatus(null);
 
+    // Capture what the buyer chose so the owner can reconcile the payment.
+    const kindLabel = effectiveKind === "deposit" ? "Deposit" : "Full payment";
+    const summary = [
+      kindLabel,
+      chosenAmountCents > 0 ? moneyFromCents(chosenAmountCents) : null,
+      payment_method ? `via ${payment_method}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const userMsg = draftMessage.trim();
+    const composedNote = [summary ? `[${summary}]` : null, userMsg || null]
+      .filter(Boolean)
+      .join(" — ");
+
     const payload = {
       dog_id: dog.id,
       buyer_name,
@@ -270,7 +322,7 @@ export default function DogDetailClient() {
       buyer_email: null,
       payment_method,
       transaction_id: draftTxn.trim() ? draftTxn.trim() : null,
-      note: draftMessage.trim() ? draftMessage.trim() : null,
+      note: composedNote || null,
     };
 
     try {
@@ -348,12 +400,6 @@ export default function DogDetailClient() {
             <p className="mt-3 text-sm sm:text-base leading-relaxed" style={photoBodyStyle}>
               Tap photos, review details, then reserve with a deposit and a quick text/call.
             </p>
-
-            {note ? (
-              <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-ink-primary border border-amber-950/12 shadow-[0_8px_24px_-16px_rgba(17,24,39,0.3)]">
-                {note}
-              </div>
-            ) : null}
 
             {error ? (
               <p
@@ -565,121 +611,157 @@ export default function DogDetailClient() {
                               <div className="text-sm font-extrabold text-ink-primary">
                                 Reserve this puppy
                               </div>
-                              <p className="mt-2 text-sm text-ink-secondary leading-relaxed">
-                                Send the deposit using one of the methods below, then text/call to
-                                confirm.
-                              </p>
 
-                              {/* Payment rows */}
-                              <div className="mt-4 space-y-2">
-                                {merchant?.venmo_url ? (
-                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
-                                        {payGlyph("venmo")}
-                                      </span>
-                                      <a
-                                        href={merchant.venmo_url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
-                                      >
-                                        Venmo
-                                      </a>
-                                    </div>
-                                    <button
-                                      onClick={async () => {
-                                        const ok = await copyToClipboard(merchant.venmo_url || "");
-                                        setNote(ok ? "Venmo link copied." : "Couldn’t copy.");
-                                      }}
-                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
+                              {hasDeposit || hasPrice ? (
+                                <>
+                                  <p className="mt-2 text-sm text-ink-secondary leading-relaxed">
+                                    Pick an amount, pay with your preferred app, then send the quick
+                                    confirmation below so we can hold this puppy for you.
+                                  </p>
+
+                                  {/* Amount selector */}
+                                  {hasDeposit && hasPrice ? (
+                                    <div
+                                      className="mt-3 grid grid-cols-2 gap-2"
+                                      role="group"
+                                      aria-label="Choose payment amount"
                                     >
-                                      Copy
-                                    </button>
-                                  </div>
-                                ) : null}
-
-                                {merchant?.cashapp_url ? (
-                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
-                                        {payGlyph("cashapp")}
-                                      </span>
-                                      <a
-                                        href={merchant.cashapp_url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
+                                      <button
+                                        type="button"
+                                        onClick={() => setAmountKind("deposit")}
+                                        aria-pressed={effectiveKind === "deposit"}
+                                        className={[
+                                          "rounded-xl px-3 py-2.5 text-left transition border",
+                                          effectiveKind === "deposit"
+                                            ? "bg-white border-meadow-500 ring-2 ring-meadow-500/35"
+                                            : "bg-white/55 border-amber-950/12 hover:border-amber-950/25",
+                                        ].join(" ")}
                                       >
-                                        Cash App
-                                      </a>
-                                    </div>
-                                    <button
-                                      onClick={async () => {
-                                        const ok = await copyToClipboard(merchant.cashapp_url || "");
-                                        setNote(ok ? "Cash App link copied." : "Couldn’t copy.");
-                                      }}
-                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
-                                    >
-                                      Copy
-                                    </button>
-                                  </div>
-                                ) : null}
-
-                                {merchant?.paypal_url ? (
-                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
-                                        {payGlyph("paypal")}
-                                      </span>
-                                      <a
-                                        href={merchant.paypal_url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="min-w-0 truncate text-sm font-semibold text-ink-primary underline decoration-black/15 hover:decoration-black/30"
-                                      >
-                                        PayPal
-                                      </a>
-                                    </div>
-                                    <button
-                                      onClick={async () => {
-                                        const ok = await copyToClipboard(merchant.paypal_url || "");
-                                        setNote(ok ? "PayPal link copied." : "Couldn’t copy.");
-                                      }}
-                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
-                                    >
-                                      Copy
-                                    </button>
-                                  </div>
-                                ) : null}
-
-                                {merchant?.zelle_recipient ? (
-                                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/55 px-3 py-2 border border-amber-950/10">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <span className="grid h-7 w-7 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
-                                        {payGlyph("zelle")}
-                                      </span>
-                                      <div className="min-w-0">
-                                        <div className="text-sm font-semibold text-ink-primary">
-                                          Zelle
+                                        <div className="text-[11px] font-bold uppercase tracking-wide text-ink-secondary">
+                                          Deposit
                                         </div>
-                                        <div className="truncate text-xs text-ink-secondary">
-                                          {merchant.zelle_recipient}
+                                        <div className="text-sm font-extrabold text-ink-primary">
+                                          {moneyFromCents(depositCents)}
                                         </div>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => setAmountKind("full")}
+                                        aria-pressed={effectiveKind === "full"}
+                                        className={[
+                                          "rounded-xl px-3 py-2.5 text-left transition border",
+                                          effectiveKind === "full"
+                                            ? "bg-white border-meadow-500 ring-2 ring-meadow-500/35"
+                                            : "bg-white/55 border-amber-950/12 hover:border-amber-950/25",
+                                        ].join(" ")}
+                                      >
+                                        <div className="text-[11px] font-bold uppercase tracking-wide text-ink-secondary">
+                                          Pay in full
+                                        </div>
+                                        <div className="text-sm font-extrabold text-ink-primary">
+                                          {moneyFromCents(priceCents)}
+                                        </div>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 border border-amber-950/12">
+                                      <span className="text-[11px] font-bold uppercase tracking-wide text-ink-secondary">
+                                        {hasDeposit ? "Deposit" : "Price"}
+                                      </span>
+                                      <span className="text-sm font-extrabold text-ink-primary">
+                                        {chosenAmountLabel}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* Pay-with options */}
+                                  {payOptions.length > 0 ? (
+                                    <div className="mt-4 space-y-2">
+                                      <div className="text-xs font-bold text-ink-secondary">
+                                        Pay{" "}
+                                        {chosenAmountLabel ? (
+                                          <span className="text-ink-primary">{chosenAmountLabel}</span>
+                                        ) : null}{" "}
+                                        with:
                                       </div>
+
+                                      {payOptions.map((opt) => (
+                                        <div
+                                          key={opt.id}
+                                          className="rounded-2xl bg-white/60 px-3 py-2.5 border border-amber-950/10"
+                                        >
+                                          <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[rgba(255,240,225,0.72)] border border-amber-950/12 text-xs font-black text-amber-950">
+                                                {payGlyph(opt.id)}
+                                              </span>
+                                              <div className="min-w-0">
+                                                <div className="text-sm font-semibold text-ink-primary">
+                                                  {opt.label}
+                                                </div>
+                                                <div className="truncate text-xs text-ink-secondary">
+                                                  {opt.handle}
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {opt.manual ? (
+                                              <button
+                                                type="button"
+                                                onClick={async () => {
+                                                  const ok = await copyToClipboard(opt.handle);
+                                                  setDraftMethod(opt.label);
+                                                  setReserveStatus({
+                                                    ok,
+                                                    text: ok
+                                                      ? `${opt.label} recipient copied — open your bank app to send ${chosenAmountLabel}.`
+                                                      : "Couldn't copy. Please copy the recipient manually.",
+                                                  });
+                                                }}
+                                                className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold bg-white/80 border border-amber-950/12 hover:border-amber-950/25"
+                                              >
+                                                Copy
+                                              </button>
+                                            ) : (
+                                              <a
+                                                href={opt.href ?? undefined}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                onClick={() => setDraftMethod(opt.label)}
+                                                className="shrink-0 inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-extrabold text-white bg-[rgba(34,40,50,0.92)] hover:bg-[rgba(34,40,50,1)] transition"
+                                              >
+                                                Pay {chosenAmountLabel}
+                                              </a>
+                                            )}
+                                          </div>
+
+                                          {opt.manual ? (
+                                            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-secondary">
+                                              Open your bank app → Zelle → send {chosenAmountLabel} to
+                                              the recipient above.
+                                            </p>
+                                          ) : !opt.prefillsAmount ? (
+                                            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-secondary">
+                                              On desktop the amount may not pre-fill — enter{" "}
+                                              {chosenAmountLabel} in the app.
+                                            </p>
+                                          ) : null}
+                                        </div>
+                                      ))}
                                     </div>
-                                    <button
-                                      onClick={async () => {
-                                        const ok = await copyToClipboard(merchant.zelle_recipient || "");
-                                        setNote(ok ? "Zelle recipient copied." : "Couldn’t copy.");
-                                      }}
-                                      className="rounded-full px-3 py-1 text-xs font-semibold bg-white/70 border border-amber-950/12 hover:border-amber-950/18"
-                                    >
-                                      Copy
-                                    </button>
-                                  </div>
-                                ) : null}
-                              </div>
+                                  ) : (
+                                    <p className="mt-3 text-xs leading-relaxed text-ink-secondary">
+                                      Payment options aren't set up yet — please text or call to
+                                      arrange payment.
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="mt-2 text-sm text-ink-secondary leading-relaxed">
+                                  Text or call to ask about pricing and reserve this puppy.
+                                </p>
+                              )}
 
                               {/* Primary actions */}
                               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

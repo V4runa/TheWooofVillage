@@ -17,7 +17,7 @@ export function ReserveStrip() {
 
   return (
     <section className="w-full">
-      <div className="grid gap-4 lg:grid-cols-12 lg:items-stretch">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-stretch">
         {/* LEFT: Contact + Social */}
         <div className="lg:col-span-4 grid gap-4">
           <ContactPanel

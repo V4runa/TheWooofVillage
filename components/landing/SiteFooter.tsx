@@ -50,7 +50,7 @@ export function SiteFooter() {
 
       <div className="border-t border-amber-950/12 bg-[rgba(255,250,244,0.90)]">
         <Container size="xl" className="py-10 sm:py-12">
-          <div className="grid gap-8 sm:gap-10 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-12">
             {/* Brand + blurb */}
             <div className="lg:col-span-5">
               <div className="flex items-center gap-3">

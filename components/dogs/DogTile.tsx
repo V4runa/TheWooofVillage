@@ -53,6 +53,14 @@ export function DogTile({ dog, dense = true }: Props) {
   const deposit = moneyFromCents(dog.deposit_amount_cents);
   const price = moneyFromCents(dog.price_amount_cents);
 
+  // Reserved/sold pups stay visible to show shop activity, but are visually
+  // de-emphasized and carry a clear corner ribbon so buyers know they aren't
+  // currently purchasable.
+  const isReserved = dog.status === "reserved";
+  const isSold = dog.status === "sold";
+  const isInactive = isReserved || isSold;
+  const ribbonText = isSold ? "Adopted" : isReserved ? "Reserved" : null;
+
   return (
     <Link href={href} className="block h-full">
       <Card
@@ -80,7 +88,10 @@ export function DogTile({ dog, dense = true }: Props) {
                   alt={dog.name}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                  className="object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  className={[
+                    "object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]",
+                    isInactive ? "saturate-[0.55] opacity-[0.78]" : "",
+                  ].join(" ")}
                 />
 
                 {/* Richer cozy overlay */}
@@ -88,12 +99,36 @@ export function DogTile({ dog, dense = true }: Props) {
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_90%_at_50%_12%,rgba(255,232,210,0.22),transparent_55%),linear-gradient(to_top,rgba(0,0,0,0.32),transparent_58%)]"
                 />
+
+                {/* Dim veil for reserved/sold so they read as past activity */}
+                {isInactive ? (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(20,16,12,0.40),rgba(20,16,12,0.12)_55%,transparent)]"
+                  />
+                ) : null}
               </>
             ) : (
               <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-amber-950/85">
                 No photo yet
               </div>
             )}
+
+            {/* Diagonal corner ribbon for reserved/sold */}
+            {ribbonText ? (
+              <div className="pointer-events-none absolute -right-12 top-4 rotate-45">
+                <div
+                  className={[
+                    "px-12 py-1 text-center text-[11px] font-black uppercase tracking-wider text-white shadow-medium",
+                    isSold
+                      ? "bg-[rgba(70,78,92,0.96)]"
+                      : "bg-[rgba(193,120,46,0.96)]",
+                  ].join(" ")}
+                >
+                  {ribbonText}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Status badge plate */}

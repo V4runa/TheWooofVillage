@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ExternalLink, Copy, Phone, MessageCircle } from "lucide-react";
+import { Copy, Phone, MessageCircle, CreditCard } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok, SiVenmo, SiCashapp, SiPaypal } from "react-icons/si";
 
 import type { Dog } from "@/types/dogs";
@@ -38,23 +38,33 @@ export function HomeHeroSlab({
 
   const featured = dogs.slice(0, 3);
 
-  const payments = [
-    profile?.venmo_url
-      ? { key: "venmo", label: "Venmo", href: profile.venmo_url, Icon: SiVenmo }
-      : null,
-    profile?.cashapp_url
-      ? { key: "cashapp", label: "Cash App", href: profile.cashapp_url, Icon: SiCashapp }
-      : null,
-    profile?.paypal_url
-      ? { key: "paypal", label: "PayPal", href: profile.paypal_url, Icon: SiPaypal }
-      : null,
-    profile?.zelle_recipient
-      ? { key: "zelle", label: "Zelle", value: profile.zelle_recipient }
-      : null,
-  ].filter(Boolean) as Array<
-    | { key: string; label: string; href: string; Icon: React.ComponentType<{ size?: number }> }
-    | { key: string; label: string; value: string }
-  >;
+  // Payment is informational on the home page now: we simply tell buyers which
+  // platforms the shop accepts (no links/buttons). The real, amount-prefilled
+  // deposit flow lives on each puppy's detail page.
+  type AcceptedMethod = {
+    key: string;
+    label: string;
+    Icon: React.ComponentType<{ size?: number }> | null;
+  };
+
+  const configuredMethods: AcceptedMethod[] = [
+    profile?.venmo_url ? { key: "venmo", label: "Venmo", Icon: SiVenmo } : null,
+    profile?.cashapp_url ? { key: "cashapp", label: "Cash App", Icon: SiCashapp } : null,
+    profile?.paypal_url ? { key: "paypal", label: "PayPal", Icon: SiPaypal } : null,
+    profile?.zelle_recipient ? { key: "zelle", label: "Zelle", Icon: null } : null,
+  ].filter(Boolean) as AcceptedMethod[];
+
+  // If the owner hasn't configured handles yet, still show the platforms we
+  // support so the section is never empty.
+  const acceptedMethods: AcceptedMethod[] =
+    configuredMethods.length > 0
+      ? configuredMethods
+      : [
+          { key: "venmo", label: "Venmo", Icon: SiVenmo },
+          { key: "cashapp", label: "Cash App", Icon: SiCashapp },
+          { key: "paypal", label: "PayPal", Icon: SiPaypal },
+          { key: "zelle", label: "Zelle", Icon: null },
+        ];
 
   const socials = [
     profile?.instagram_url
@@ -98,15 +108,6 @@ export function HomeHeroSlab({
     "hover:-translate-y-[1px] hover:shadow-[0_26px_68px_-26px_rgba(17,24,39,0.78)] " +
     "hover:saturate-[1.05] hover:brightness-[1.02]";
 
-  const linkBtnSecondary =
-    "text-ink-primary " +
-    "bg-[rgba(255,250,244,0.88)] border border-amber-950/14 ring-1 ring-inset ring-white/20 " +
-    "shadow-[0_14px_34px_-18px_rgba(17,24,39,0.36)] " +
-    "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl " +
-    "before:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.18),transparent_62%)] before:opacity-55 " +
-    "hover:-translate-y-[1px] hover:bg-[rgba(255,252,248,0.95)] hover:border-amber-950/22 " +
-    "hover:shadow-[0_20px_48px_-22px_rgba(17,24,39,0.50)]";
-
   return (
     <div className="w-full">
       <Card variant="surface" className="overflow-hidden">
@@ -137,10 +138,6 @@ export function HomeHeroSlab({
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/dogs" className={[linkBtnBase, linkBtnMd, "relative", linkBtnPrimary].join(" ")}>
                   Browse puppies →
-                </Link>
-
-                <Link href="#pups" className={[linkBtnBase, linkBtnMd, "relative", linkBtnSecondary].join(" ")}>
-                  Jump to grid ↓
                 </Link>
               </div>
 
@@ -238,69 +235,50 @@ export function HomeHeroSlab({
               ) : null}
             </div>
 
-            {/* Payment */}
+            {/* Payment — informational: which methods we accept */}
             <div className="lg:col-span-6 p-5 border-t lg:border-t-0 lg:border-l border-amber-950/14">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
-                    Deposit & Payment
+                    Payment methods we accept
                   </div>
                   <div className="mt-1 text-sm text-ink-secondary">
-                    Pay deposit to reserve. Then{" "}
-                    <span className="font-extrabold text-ink-primary">text/call</span>{" "}
-                    to confirm.
+                    A deposit reserves your puppy — details and handles are on each
+                    puppy&apos;s page.
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {payments.length === 0 ? (
-                  <div className="text-sm text-ink-secondary">Payment links not set yet.</div>
-                ) : (
-                  payments.map((p) => {
-                    if ("href" in p) {
-                      const Icon = p.Icon;
-                      return (
-                        <ActionChip
-                          key={p.key}
-                          as="a"
-                          href={p.href}
-                          left={
-                            <IconDot>
-                              <Icon size={18} />
-                            </IconDot>
-                          }
-                          right={
-                            <span className="inline-flex items-center gap-1 text-xs font-extrabold text-ink-secondary underline">
-                              Open <ExternalLink size={14} />
-                            </span>
-                          }
-                        >
-                          <div className="text-sm font-extrabold text-ink-primary">{p.label}</div>
-                        </ActionChip>
-                      );
-                    }
+              <div className="mt-3 flex flex-wrap gap-2">
+                {acceptedMethods.map((m) => {
+                  const Icon = m.Icon;
+                  return (
+                    <div
+                      key={m.key}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[rgba(255,250,244,0.92)] border border-amber-950/14 ring-1 ring-inset ring-white/20 px-3.5 py-2 shadow-[0_10px_28px_-22px_rgba(17,24,39,0.30)]"
+                    >
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(255,236,218,0.9)] text-ink-primary">
+                        {Icon ? <Icon size={16} /> : <span className="text-xs font-black">Z</span>}
+                      </span>
+                      <span className="text-sm font-extrabold text-ink-primary">
+                        {m.label}
+                      </span>
+                    </div>
+                  );
+                })}
 
-                    return (
-                      <ActionChip
-                        key={p.key}
-                        as="button"
-                        onClick={async () => {
-                          const ok = await copyToClipboard(p.value);
-                          showToast(ok ? "Zelle copied." : "Couldn’t copy.");
-                        }}
-                        left={<IconDot>🏦</IconDot>}
-                        right={
-                          <span className="text-xs font-extrabold text-ink-secondary underline">
-                            Copy
-                          </span>
-                        }
-                      >
-                        <div className="text-sm font-extrabold text-ink-primary">Zelle</div>
-                      </ActionChip>
-                    );
-                  })
-                )}
+                {/* Credit card — coming soon */}
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-[rgba(248,250,252,0.92)] border border-dashed border-amber-950/20 px-3.5 py-2 opacity-90">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(232,238,246,0.95)] text-ink-secondary">
+                    <CreditCard size={16} />
+                  </span>
+                  <span className="text-sm font-extrabold text-ink-secondary">
+                    Credit Card
+                  </span>
+                  <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
+                    Coming soon
+                  </span>
+                </div>
               </div>
             </div>
 

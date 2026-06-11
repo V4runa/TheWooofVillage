@@ -6,6 +6,20 @@ import { extFromType } from "@/lib/admin/utils";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Guard against junk/oversized payloads. Client compresses to ~1600px first,
+// so anything beyond this is almost certainly not a normal photo upload.
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // 15MB
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /* ============================================================
    POST → Upload image
    ============================================================ */
@@ -35,6 +49,26 @@ export async function POST(
     const alt = String(form.get("alt") || "").trim() || null;
     const contentType = (file as any)?.type || "application/octet-stream";
 
+    // Reject anything that isn't a real image up front so bad files fail fast
+    // and clearly (instead of landing as an unreadable object in storage).
+    if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
+      return NextResponse.json(
+        { error: "Unsupported file type. Please upload a JPG, PNG, WEBP, or GIF image." },
+        { status: 400 }
+      );
+    }
+
+    if (file.size === 0) {
+      return NextResponse.json({ error: "File is empty." }, { status: 400 });
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: "Image is too large. Please use a photo under 15MB." },
+        { status: 400 }
+      );
+    }
+
     const ext = extFromType(contentType);
     const uuid = crypto.randomUUID();
 
@@ -48,13 +82,25 @@ export async function POST(
 
     const buffer = await file.arrayBuffer();
 
-    const upload = await supabaseAdmin.storage.from("dogs").upload(objectPath, buffer, {
-      contentType,
-      upsert: false,
-    });
+    // Retry the storage write a couple of times — object storage occasionally
+    // returns transient errors, and a single retry stops a whole bulk upload
+    // from losing one photo to a blip.
+    let uploadError: { message: string } | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const upload = await supabaseAdmin.storage
+        .from("dogs")
+        .upload(objectPath, buffer, { contentType, upsert: false });
 
-    if (upload.error) {
-      return NextResponse.json({ error: upload.error.message }, { status: 500 });
+      if (!upload.error) {
+        uploadError = null;
+        break;
+      }
+      uploadError = upload.error;
+      if (attempt < 3) await sleep(250 * attempt);
+    }
+
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 502 });
     }
 
     const { data: urlData } = supabaseAdmin.storage.from("dogs").getPublicUrl(objectPath);

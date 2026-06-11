@@ -21,11 +21,13 @@ import {
   Star,
   ArrowLeft,
   ArrowRight,
+  Crop as CropIcon,
 } from "lucide-react";
 
 import type { Dog, DogStatus } from "@/types/dogs";
 import { adminForm, adminJson } from "@/lib/admin/apiClient";
-import { compressImage } from "@/lib/admin/image";
+import { uploadImageWithRetry } from "@/lib/admin/upload";
+import { ImageCropModal } from "@/components/admin/ImageCropModal";
 import {
   softShell,
   btn,
@@ -110,6 +112,19 @@ export function DogsPanel() {
   // Image management (upload / set cover / reorder / delete)
   const [uploading, setUploading] = React.useState(false);
   const [imgBusyKey, setImgBusyKey] = React.useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = React.useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  // Raw files that failed to upload, kept so the admin can retry them without
+  // re-selecting — guarantees no photo silently goes missing.
+  const [failedUploads, setFailedUploads] = React.useState<File[]>([]);
+  // Image currently open in the crop editor.
+  const [cropTarget, setCropTarget] = React.useState<{
+    id: string;
+    url: string;
+  } | null>(null);
+  const [cropSaving, setCropSaving] = React.useState(false);
 
   async function load() {
     setLoading(true);
@@ -220,27 +235,30 @@ export function DogsPanel() {
 
       const createdId = data?.dog?.id as string | undefined;
 
-      // Step 2 — upload photos one at a time (compressed in the browser first).
+      // Step 2 — upload photos one at a time (compressed + retried per file so
+      // a single flaky upload can't take the rest down with it).
       const files = cFiles ? Array.from(cFiles) : [];
       let firstUploadedUrl: string | null = null;
       let uploadFailures = 0;
+      const extraFields = cAlt.trim() ? { alt: cAlt.trim() } : undefined;
 
       if (createdId && files.length > 0) {
-        for (const raw of files) {
+        setUploadProgress({ done: 0, total: files.length });
+        for (let i = 0; i < files.length; i++) {
           try {
-            const file = await compressImage(raw);
-            const imgForm = new FormData();
-            imgForm.set("file", file);
-            if (cAlt.trim()) imgForm.set("alt", cAlt.trim());
-            const res = await adminForm<{ ok: true; image: { url?: string } }>(
+            const image = await uploadImageWithRetry(
               `/api/admin/dogs/${createdId}/images`,
-              imgForm
+              files[i],
+              { extraFields }
             );
-            if (!firstUploadedUrl && res?.image?.url) firstUploadedUrl = res.image.url;
+            if (!firstUploadedUrl && image?.url) firstUploadedUrl = image.url;
           } catch {
             uploadFailures += 1;
+          } finally {
+            setUploadProgress({ done: i + 1, total: files.length });
           }
         }
+        setUploadProgress(null);
 
         // Step 3 — make the first uploaded photo the cover.
         if (firstUploadedUrl) {
@@ -291,6 +309,7 @@ export function DogsPanel() {
       showToast(msg, "error");
     } finally {
       setCreating(false);
+      setUploadProgress(null);
     }
   }
 
@@ -392,49 +411,68 @@ export function DogsPanel() {
     return [...imgs].sort((a, b) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0));
   }, [selected]);
 
-  async function uploadImages(files: FileList | null) {
-    if (!selected || !files || files.length === 0) return;
+  async function uploadImages(input: FileList | File[] | null) {
+    if (!selected || !input) return;
+    const files = Array.from(input);
+    if (files.length === 0) return;
 
+    const dogId = selected.id;
     const hadCover = Boolean((selected as any).cover_image_url);
     let firstUploadedUrl: string | null = null;
+    const failures: File[] = [];
 
     setUploading(true);
     setError(null);
-    try {
-      // Compress in the browser, then upload one at a time so an early failure
-      // doesn't lose later files.
-      for (const raw of Array.from(files)) {
-        const file = await compressImage(raw);
-        const form = new FormData();
-        form.set("file", file);
-        const res = await adminForm<{ ok: true; image: { url?: string } }>(
-          `/api/admin/dogs/${selected.id}/images`,
-          form
+    setFailedUploads([]);
+    setUploadProgress({ done: 0, total: files.length });
+
+    // Upload one at a time; each file is compressed + retried internally so an
+    // early failure never loses later files, and any that still fail are kept
+    // for a one-click retry.
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const image = await uploadImageWithRetry(
+          `/api/admin/dogs/${dogId}/images`,
+          files[i]
         );
-        if (!firstUploadedUrl && res?.image?.url) firstUploadedUrl = res.image.url;
+        if (!firstUploadedUrl && image?.url) firstUploadedUrl = image.url;
+      } catch {
+        failures.push(files[i]);
+      } finally {
+        setUploadProgress({ done: i + 1, total: files.length });
       }
-
-      // If this listing had no cover yet, promote the first uploaded photo.
-      if (!hadCover && firstUploadedUrl) {
-        try {
-          await adminJson(`/api/admin/dogs/${selected.id}`, {
-            method: "PATCH",
-            body: JSON.stringify({ cover_image_url: firstUploadedUrl }),
-          });
-        } catch {
-          /* non-fatal */
-        }
-      }
-
-      showToast(files.length > 1 ? "Photos uploaded." : "Photo uploaded.");
-      await load();
-    } catch (e: any) {
-      const msg = e?.message || "Upload failed.";
-      setError(msg);
-      showToast(msg, "error");
-    } finally {
-      setUploading(false);
     }
+
+    // If this listing had no cover yet, promote the first uploaded photo.
+    if (!hadCover && firstUploadedUrl) {
+      try {
+        await adminJson(`/api/admin/dogs/${dogId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ cover_image_url: firstUploadedUrl }),
+        });
+      } catch {
+        /* non-fatal */
+      }
+    }
+
+    setUploading(false);
+    setUploadProgress(null);
+    setFailedUploads(failures);
+
+    const ok = files.length - failures.length;
+    if (failures.length === 0) {
+      showToast(files.length > 1 ? `${ok} photos uploaded.` : "Photo uploaded.");
+    } else {
+      setError(
+        `${ok} of ${files.length} uploaded. ${failures.length} failed — use "Retry failed" to try again.`
+      );
+      showToast(
+        `${failures.length} photo${failures.length === 1 ? "" : "s"} failed to upload.`,
+        "error"
+      );
+    }
+
+    await load();
   }
 
   async function deleteImage(imageId: string) {
@@ -514,6 +552,70 @@ export function DogsPanel() {
       showToast(msg, "error");
     } finally {
       setImgBusyKey(null);
+    }
+  }
+
+  // Save a cropped version of an existing photo. We upload the crop as a new
+  // image in the original's slot, carry over the cover flag, then remove the
+  // original — so the edit is atomic from the admin's point of view and never
+  // leaves the listing without a photo.
+  async function saveCroppedImage(croppedFile: File) {
+    if (!selected || !cropTarget) return;
+
+    const dogId = selected.id;
+    const original = cropTarget;
+    const wasCover = (selected as any).cover_image_url === original.url;
+    const order = selectedImages.map((i: any) => i.id as string);
+
+    setCropSaving(true);
+    setError(null);
+    try {
+      const image = (await uploadImageWithRetry(
+        `/api/admin/dogs/${dogId}/images`,
+        croppedFile
+      )) as { id?: string; url?: string };
+      const newId = image?.id;
+      const newUrl = image?.url;
+
+      // Put the new image where the original was.
+      if (newId) {
+        const finalOrder = order.map((id) => (id === original.id ? newId : id));
+        try {
+          await adminJson(`/api/admin/dogs/${dogId}/images`, {
+            method: "PATCH",
+            body: JSON.stringify({ orderedIds: finalOrder }),
+          });
+        } catch {
+          /* non-fatal: ordering falls back to upload time */
+        }
+      }
+
+      if (wasCover && newUrl) {
+        try {
+          await adminJson(`/api/admin/dogs/${dogId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ cover_image_url: newUrl }),
+          });
+        } catch {
+          /* non-fatal */
+        }
+      }
+
+      // Remove the original only after the replacement is safely in place.
+      await adminJson(
+        `/api/admin/dogs/${dogId}/images?imageId=${encodeURIComponent(original.id)}`,
+        { method: "DELETE" }
+      );
+
+      showToast("Photo cropped and updated.");
+      setCropTarget(null);
+      await load();
+    } catch (e: any) {
+      const msg = e?.message || "Could not save cropped photo.";
+      setError(msg);
+      showToast(msg, "error");
+    } finally {
+      setCropSaving(false);
     }
   }
 
@@ -920,7 +1022,11 @@ export function DogsPanel() {
                       disabled={creating}
                     >
                       <Plus size={14} />
-                      {creating ? "Creating…" : "Create listing"}
+                      {uploadProgress
+                        ? `Uploading ${uploadProgress.done}/${uploadProgress.total}…`
+                        : creating
+                        ? "Creating…"
+                        : "Create listing"}
                     </button>
                     <button
                       className={`${btn("muted")} flex items-center gap-2`}
@@ -1071,6 +1177,63 @@ export function DogsPanel() {
                   </label>
                 </div>
 
+                {uploadProgress ? (
+                  <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50/70 p-4 shadow-adminSm">
+                    <div className="flex items-center justify-between text-lg font-semibold text-sky-900">
+                      <span>
+                        Uploading {uploadProgress.done} of {uploadProgress.total}…
+                      </span>
+                      <span>
+                        {Math.round(
+                          (uploadProgress.done / Math.max(1, uploadProgress.total)) * 100
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-sky-100">
+                      <div
+                        className="h-full rounded-full bg-sky-500 transition-all duration-200"
+                        style={{
+                          width: `${Math.round(
+                            (uploadProgress.done / Math.max(1, uploadProgress.total)) * 100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                {failedUploads.length > 0 ? (
+                  <div className="mb-4 flex flex-col gap-3 rounded-xl border-2 border-red-200 bg-red-50 p-4 shadow-adminSm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-lg font-semibold text-red-800">
+                      {failedUploads.length} photo{failedUploads.length === 1 ? "" : "s"}{" "}
+                      didn&apos;t upload. Nothing was lost — retry below.
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        className={`${btn("primary")} flex items-center gap-2`}
+                        disabled={uploading}
+                        onClick={() => {
+                          const retry = failedUploads;
+                          void uploadImages(retry);
+                        }}
+                      >
+                        <Upload size={16} />
+                        Retry failed
+                      </button>
+                      <button
+                        type="button"
+                        className={btn("muted")}
+                        disabled={uploading}
+                        onClick={() => setFailedUploads([])}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
                 {selectedImages.length === 0 ? (
                   <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50/80 p-6 text-center text-lg text-gray-600 shadow-adminSm">
                     No photos yet. Click <span className="font-bold">“Add photos”</span> to
@@ -1126,6 +1289,17 @@ export function DogsPanel() {
                               className="rounded-lg p-2 text-gray-600 hover:bg-stone-100 disabled:opacity-40"
                             >
                               <ArrowRight size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              title="Crop photo"
+                              disabled={busy}
+                              onClick={() =>
+                                setCropTarget({ id: img.id, url: img.url })
+                              }
+                              className="rounded-lg p-2 text-gray-600 hover:bg-stone-100 disabled:opacity-40"
+                            >
+                              <CropIcon size={18} />
                             </button>
                             <button
                               type="button"
@@ -1356,6 +1530,17 @@ export function DogsPanel() {
           )}
         </div>
       </div>
+
+      {cropTarget ? (
+        <ImageCropModal
+          src={cropTarget.url}
+          busy={cropSaving}
+          onCancel={() => {
+            if (!cropSaving) setCropTarget(null);
+          }}
+          onSave={(file) => saveCroppedImage(file)}
+        />
+      ) : null}
     </div>
   );
 }

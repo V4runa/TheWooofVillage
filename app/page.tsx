@@ -16,15 +16,36 @@ function clampHomeGridCount(realCount: number) {
   return Math.min(realCount, 12);
 }
 
+// Available pups first, then reserved, then sold/adopted — so buyers still see
+// the shop's activity without burying what's actually purchasable.
+const STATUS_WEIGHT: Record<string, number> = {
+  available: 0,
+  reserved: 1,
+  sold: 2,
+};
+
+function byStatusThenOrder(a: { status: string }, b: { status: string }) {
+  return (STATUS_WEIGHT[a.status] ?? 3) - (STATUS_WEIGHT[b.status] ?? 3);
+}
+
 export default function Home() {
-  const { dogs, loading, error } = useDogs({ statuses: ["available"] });
+  const { dogs, loading, error } = useDogs({
+    statuses: ["available", "reserved", "sold"],
+  });
   const { profile } = useMerchantProfile();
 
-  const liveDogs = dogs ?? [];
+  const liveDogs = React.useMemo(
+    () => [...(dogs ?? [])].sort(byStatusThenOrder),
+    [dogs]
+  );
   const realCount = liveDogs.length;
   const hasRealDogs = realCount > 0;
 
-  const heroDogs = liveDogs.slice(0, 3);
+  // Hero spotlights purchasable pups first; falls back to whatever exists.
+  const heroDogs = React.useMemo(() => {
+    const available = liveDogs.filter((d) => d.status === "available");
+    return (available.length > 0 ? available : liveDogs).slice(0, 3);
+  }, [liveDogs]);
 
   const gridCount = hasRealDogs ? clampHomeGridCount(realCount) : 0;
   const gridDogs = liveDogs.slice(0, gridCount);
@@ -48,7 +69,7 @@ export default function Home() {
               className="text-2xl sm:text-3xl font-extrabold tracking-tight"
               style={photoTitleStyle}
             >
-              Puppies available now
+              Our puppies
             </h2>
 
             {/* Accent rule: subtle animated sheen (safe + premium) */}
@@ -66,7 +87,9 @@ export default function Home() {
               className="mt-3 max-w-[70ch] text-sm sm:text-base leading-relaxed"
               style={photoBodyStyle}
             >
-              Tap a puppy for photos, details, and deposit options.
+              Available pups show first. Reserved and adopted babies stay up so
+              you can see recent litters and our happy homes. Tap any puppy for
+              photos and details.
             </p>
           </div>
 

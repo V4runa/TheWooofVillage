@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { RefreshCw, MessageSquare, CheckCircle2, XCircle, Clock, Star, Trash2, Image as ImageIcon } from "lucide-react";
+import { RefreshCw, MessageSquare, CheckCircle2, XCircle, Clock, Star, Trash2, Image as ImageIcon, Link2 } from "lucide-react";
 
 import type { Testimonial, TestimonialStatus } from "@/types/testimonials";
 import { adminJson } from "@/lib/admin/apiClient";
@@ -117,6 +117,24 @@ export function TestimonialsPanel() {
             <span className="font-semibold">
               {loading ? "Loading…" : `${items.length} ${items.length === 1 ? 'testimonial' : 'testimonials'}`}
             </span>
+            <button
+              className={`${btn("muted")} flex items-center gap-2`}
+              onClick={async () => {
+                const link =
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/review`
+                    : "/review";
+                try {
+                  await navigator.clipboard.writeText(link);
+                  showToast("Review link copied — share it with your buyers.");
+                } catch {
+                  showToast(link, "error");
+                }
+              }}
+            >
+              <Link2 size={14} />
+              Copy review link
+            </button>
             <button className={`${btn("muted")} flex items-center gap-2`} onClick={load}>
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
               Refresh

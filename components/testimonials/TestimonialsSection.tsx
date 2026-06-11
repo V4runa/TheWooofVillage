@@ -2,17 +2,10 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useMemo } from "react";
 import { useTestimonials } from "@/hooks/useTestimonials";
 import type { Testimonial } from "@/types/testimonials";
-
-type SubmitDraft = {
-  author_name: string;
-  author_location: string;
-  rating: number;
-  message: string;
-  photo_url: string;
-};
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -53,22 +46,8 @@ const subtitleInkStyle: React.CSSProperties = {
 };
 
 export function TestimonialsSection() {
-  const { testimonials, loading, error, refetch } = useTestimonials({
+  const { testimonials, loading, error } = useTestimonials({
     statuses: ["approved"],
-  });
-
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const [submitOk, setSubmitOk] = useState<string | null>(null);
-  const [submitErr, setSubmitErr] = useState<string | null>(null);
-
-  const [draft, setDraft] = useState<SubmitDraft>({
-    author_name: "",
-    author_location: "",
-    rating: 5,
-    message: "",
-    photo_url: "",
   });
 
   const visible = useMemo(() => testimonials ?? [], [testimonials]);
@@ -80,67 +59,6 @@ export function TestimonialsSection() {
       count === 0 ? null : list.reduce((sum, t) => sum + (t.rating ?? 0), 0) / count;
     return { count: visible.length, avg: avg ? Math.round(avg * 10) / 10 : null };
   }, [visible]);
-
-  async function submit() {
-    setSubmitOk(null);
-    setSubmitErr(null);
-
-    const payload = {
-      author_name: draft.author_name.trim(),
-      author_location: draft.author_location.trim(),
-      rating: draft.rating ? clamp(draft.rating, 1, 5) : null,
-      message: draft.message.trim(),
-      photo_url: draft.photo_url.trim(),
-    };
-
-    if (!payload.author_name) {
-      setSubmitErr("Please enter your name.");
-      return;
-    }
-    if (!payload.message) {
-      setSubmitErr("Please write a short message.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const res = await fetch("/api/public/testimonials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok || !json?.ok) {
-        setSubmitting(false);
-        setSubmitErr(json?.error || "Could not submit review.");
-        return;
-      }
-
-      setSubmitting(false);
-
-      if (json?.warning) {
-        setSubmitOk(String(json.warning));
-      } else {
-        setSubmitOk("Thanks! Your review was submitted and will appear once approved.");
-      }
-
-      setDraft({
-        author_name: "",
-        author_location: "",
-        rating: 5,
-        message: "",
-        photo_url: "",
-      });
-
-      await refetch();
-    } catch (e: any) {
-      setSubmitting(false);
-      setSubmitErr(e?.message || "Could not submit review.");
-    }
-  }
 
   return (
     <section className="relative">
@@ -180,12 +98,8 @@ export function TestimonialsSection() {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setSubmitOk(null);
-            setSubmitErr(null);
-            setOpen(true);
-          }}
+        <Link
+          href="/review"
           className={[
             "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold",
             "transition active:translate-y-[1px]",
@@ -200,7 +114,7 @@ export function TestimonialsSection() {
           }}
         >
           Leave a review
-        </button>
+        </Link>
       </div>
 
       <div className="mt-6">
@@ -289,123 +203,6 @@ export function TestimonialsSection() {
           </div>
         )}
       </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-          <button
-            aria-label="Close modal"
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setOpen(false)}
-          />
-
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-[rgba(255,252,248,0.98)] p-6 border border-amber-950/12 ring-1 ring-inset ring-white/20 shadow-[0_18px_52px_-26px_rgba(17,24,39,0.36)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xl font-extrabold text-ink-primary">Leave a review</div>
-                <div className="mt-1 text-sm text-ink-secondary">
-                  Short + honest is perfect. Photos optional.
-                </div>
-              </div>
-
-              <button
-                onClick={() => setOpen(false)}
-                className="rounded-full px-3 py-1 text-sm font-extrabold border border-amber-950/18 bg-[rgba(255,248,238,0.92)] hover:bg-[rgba(255,252,248,0.98)]"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              <input
-                value={draft.author_name}
-                onChange={(e) => setDraft((d) => ({ ...d, author_name: e.target.value }))}
-                placeholder="Your name *"
-                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
-              />
-
-              <input
-                value={draft.author_location}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, author_location: e.target.value }))
-                }
-                placeholder="City / State (optional)"
-                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
-              />
-
-              <div className="grid gap-2">
-                <div className="text-sm font-extrabold text-ink-primary">Rating</div>
-                <div className="flex gap-2">
-                  {([1, 2, 3, 4, 5] as const).map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setDraft((d) => ({ ...d, rating: n }))}
-                      className={[
-                        "rounded-full px-3 py-2 text-sm font-extrabold border transition",
-                        draft.rating === n
-                          ? "bg-[rgba(34,40,50,0.92)] text-white border-black/10"
-                          : "bg-[rgba(255,248,238,0.92)] text-ink-primary border-amber-950/18 hover:border-amber-950/24",
-                      ].join(" ")}
-                    >
-                      {n}★
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <textarea
-                value={draft.message}
-                onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))}
-                placeholder="Write your message *"
-                className="min-h-[120px] w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
-              />
-
-              <input
-                value={draft.photo_url}
-                onChange={(e) => setDraft((d) => ({ ...d, photo_url: e.target.value }))}
-                placeholder="Photo URL (optional for now)"
-                className="w-full rounded-xl bg-white/90 px-4 py-3 text-sm ring-1 ring-black/10 outline-none focus:ring-2 focus:ring-amber-300/55 focus:ring-offset-2"
-              />
-
-              {submitErr && (
-                <div className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-900 ring-1 ring-black/10">
-                  {submitErr}
-                </div>
-              )}
-              {submitOk && (
-                <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-900 ring-1 ring-black/10">
-                  {submitOk}
-                </div>
-              )}
-
-              <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                <button
-                  onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold bg-[rgba(255,248,238,0.92)] border border-amber-950/18 hover:bg-[rgba(255,252,248,0.98)] transition"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  disabled={submitting}
-                  onClick={submit}
-                  className={[
-                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                    "bg-[rgba(34,40,50,0.92)] text-white hover:bg-[rgba(34,40,50,1)] transition",
-                    submitting ? "opacity-60 cursor-not-allowed" : "",
-                  ].join(" ")}
-                >
-                  {submitting ? "Submitting..." : "Submit review"}
-                </button>
-              </div>
-
-              <p className="text-xs text-ink-secondary">
-                Reviews are manually approved to prevent spam. ❤️
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style jsx global>{`
         @keyframes woofSheenTestimonials {

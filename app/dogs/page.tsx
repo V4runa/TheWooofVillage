@@ -15,6 +15,17 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+// Available pups first, then reserved, then sold/adopted.
+const STATUS_WEIGHT: Record<string, number> = {
+  available: 0,
+  reserved: 1,
+  sold: 2,
+};
+
+function byStatusThenOrder(a: { status: string }, b: { status: string }) {
+  return (STATUS_WEIGHT[a.status] ?? 3) - (STATUS_WEIGHT[b.status] ?? 3);
+}
+
 /* -----------------------------
    Showroom grid (stable columns)
    - NO auto-fit (prevents uneven rows)
@@ -94,9 +105,14 @@ function ShowroomGrid({
 }
 
 export default function DogsPage() {
-  const { dogs, loading, error } = useDogs({ statuses: ["available"] });
+  const { dogs, loading, error } = useDogs({
+    statuses: ["available", "reserved", "sold"],
+  });
 
-  const liveDogs = dogs ?? [];
+  const liveDogs = React.useMemo(
+    () => [...(dogs ?? [])].sort(byStatusThenOrder),
+    [dogs]
+  );
   const realCount = liveDogs.length;
   const hasRealDogs = realCount > 0;
 
@@ -123,7 +139,7 @@ export default function DogsPage() {
                   className="text-2xl sm:text-3xl font-extrabold tracking-tight"
                   style={photoTitleStyle}
                 >
-                  Puppies available now
+                  Our puppies
                 </h1>
 
                 {/* Divider / accent rule (same language as home) */}
@@ -142,7 +158,8 @@ export default function DogsPage() {
                     className="text-sm sm:text-base leading-relaxed"
                     style={photoBodyStyle}
                   >
-                    Tap a puppy for photos, details, and deposit options.
+                    Available pups show first. Reserved and adopted babies stay
+                    up so you can see recent litters and our happy homes.
                   </p>
 
                 </div>

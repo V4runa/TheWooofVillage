@@ -14,18 +14,18 @@ type Step = {
 const STEPS: Step[] = [
   {
     Icon: Search,
-    title: "1 · Browse & ask",
-    body: "Look through the available puppies and text us with any questions. We reply fast and honestly about temperament, health, and fit.",
+    title: "1 · Meeting the pups",
+    body: "We are very flexible on meet and greets. If you're local you can schedule an inperson visit. You can also reserve a puppy or schedule a virtual visit.",
   },
   {
     Icon: HandHeart,
     title: "2 · Reserve with a deposit",
-    body: "Found your match? Send the deposit with any listed payment method, then text or call to confirm. The deposit holds your pup.",
+    body: "Found your match? Send the deposit with any listed payment method, then text or call to confirm the deposit has been received. The deposit holds your pup for 7 days. Deposits are non-refundable and non-transferable.",
   },
   {
     Icon: Home,
     title: "3 · Welcome home",
-    body: "Arrange a home pickup. Your puppy goes home with their records and a little starter guidance for the first few days.",
+    body: "Arrange a home pickup or a delivery for a fee depending on your location. Your puppy goes home with their vaccination records. Most puppies come with two sets of shots and registration papers. (ALL PUPPIES COME WITH FLORIDA HEALTH CERTIFICATES, SHOT RECORDS, DEWORMING RECORDS, AND A PUPPY PURCHASE AGREEMENT) You will receive your puppy groomed, socialized, pee pad trained, crate trained, and ready to go home with you with a little welcome bag of goodies.",
   },
 ];
 
@@ -34,7 +34,7 @@ type Faq = { q: string; a: string };
 const FAQS: Faq[] = [
   {
     q: "Are the puppies vet-checked and vaccinated?",
-    a: "Yes. Each puppy is examined and receives age-appropriate vaccinations and deworming before going home. We share records at pickup.",
+    a: "Yes. Each puppy is examined and receives age-appropriate vaccinations and deworming before going home. We share records at pickup. And all puppies come with a Florida health certificate.",
   },
   {
     q: "How do deposits and reservations work?",
@@ -42,11 +42,11 @@ const FAQS: Faq[] = [
   },
   {
     q: "Do you ship, or is it local pickup?",
-    a: "We focus on in-person home pickup so you can meet your puppy and us. If you have travel questions, just ask and we'll help where we can.",
+    a: "We offer delivery services, flight nanny services for a fee. We also offer local pickups free of charge.",
   },
   {
     q: "What if I'm not sure which puppy is right for us?",
-    a: "Tell us about your home, schedule, and what you're hoping for. We'll give you our honest read on which pup is the best match.",
+    a: "If you're searching for more of a personality match rather than a specific color or look, We can help choose the best personily matching your home and family.",
   },
 ];
 
@@ -57,8 +57,12 @@ function StepCard({ step }: { step: Step }) {
       <div className="grid h-11 w-11 place-items-center rounded-2xl border border-amber-950/14 bg-[rgba(255,248,238,0.92)] ring-1 ring-inset ring-white/20 text-amber-900/85 shadow-soft">
         <Icon size={20} />
       </div>
-      <h3 className="mt-4 text-base font-extrabold text-ink-primary">{step.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-secondary">{step.body}</p>
+      <h3 className="mt-4 text-base font-extrabold text-ink-primary">
+        {step.title}
+      </h3>
+      <p className="mt-2 text-sm leading-relaxed text-ink-secondary">
+        {step.body}
+      </p>
     </Card>
   );
 }
@@ -74,7 +78,9 @@ function FaqItem({ item }: { item: Faq }) {
           aria-hidden
         />
       </summary>
-      <p className="mt-3 text-sm leading-relaxed text-ink-secondary">{item.a}</p>
+      <p className="mt-3 text-sm leading-relaxed text-ink-secondary">
+        {item.a}
+      </p>
     </details>
   );
 }
@@ -92,7 +98,8 @@ export function TrustSection() {
             How adoption works
           </h2>
           <p className="mt-2 max-w-[60ch] text-sm sm:text-base leading-relaxed text-ink-secondary">
-            Three easy steps, with a real person on the other end the whole way through.
+            Three easy steps, with a real person on the other end the whole way
+            through.
           </p>
         </div>
 

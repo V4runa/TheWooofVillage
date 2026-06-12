@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Copy, Phone, MessageCircle, CreditCard } from "lucide-react";
+import { Copy, Phone, MessageCircle } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok, SiVenmo, SiCashapp, SiPaypal } from "react-icons/si";
+import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCcDiscover } from "react-icons/fa6";
 
 import type { Dog } from "@/types/dogs";
 import type { MerchantProfile } from "@/types/merchant";
@@ -267,16 +268,16 @@ export function HomeHeroSlab({
                   );
                 })}
 
-                {/* Credit card — coming soon */}
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-[rgba(248,250,252,0.92)] border border-dashed border-amber-950/20 px-3.5 py-2 opacity-90">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(232,238,246,0.95)] text-ink-secondary">
-                    <CreditCard size={16} />
-                  </span>
-                  <span className="text-sm font-extrabold text-ink-secondary">
+                {/* Credit card — accepted (in person; not yet in the webapp) */}
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-[rgba(255,250,244,0.92)] border border-amber-950/14 ring-1 ring-inset ring-white/20 px-3.5 py-2 shadow-[0_10px_28px_-22px_rgba(17,24,39,0.30)]">
+                  <span className="text-sm font-extrabold text-ink-primary">
                     Credit Card
                   </span>
-                  <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
-                    Coming soon
+                  <span className="flex items-center gap-1.5" aria-hidden>
+                    <FaCcVisa size={22} className="text-[#1A1F71]" title="Visa" />
+                    <FaCcMastercard size={22} className="text-[#EB001B]" title="Mastercard" />
+                    <FaCcAmex size={22} className="text-[#2E77BC]" title="American Express" />
+                    <FaCcDiscover size={22} className="text-[#F58220]" title="Discover" />
                   </span>
                 </div>
               </div>

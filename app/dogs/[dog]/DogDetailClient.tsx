@@ -777,7 +777,7 @@ export default function DogDetailClient() {
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 onClick={() => setDraftMethod(opt.label)}
-                                                className="shrink-0 inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-extrabold text-white bg-[rgba(34,40,50,0.92)] hover:bg-[rgba(34,40,50,1)] transition"
+                                                className="shrink-0 inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-extrabold text-white! bg-meadow-600 hover:bg-meadow-700 shadow-sm transition"
                                               >
                                                 Pay {chosenAmountLabel}
                                               </a>
@@ -817,8 +817,8 @@ export default function DogDetailClient() {
                                   href={smsHref ?? undefined}
                                   className={[
                                     "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold",
-                                    "bg-[rgba(34,40,50,0.92)] text-[rgba(255,248,242,0.98)]",
-                                    "hover:bg-[rgba(34,40,50,1)] transition",
+                                    "bg-[#222832] text-white! shadow-md",
+                                    "hover:bg-[#2c333f] transition",
                                     phone ? "" : "opacity-50 pointer-events-none",
                                   ].join(" ")}
                                 >

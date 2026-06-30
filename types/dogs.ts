@@ -22,7 +22,7 @@ export type DogRow = {
 
   breed: string | null;
   sex: string | null;
-  age_weeks: number | null;
+  date_of_birth: string | null;
   color: string | null;
   ready_date: string | null;
 

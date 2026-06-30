@@ -31,7 +31,7 @@ const DOG_COLUMNS = [
   "cover_image_url",
   "breed",
   "sex",
-  "age_weeks",
+  "date_of_birth",
   "color",
   "ready_date",
   "sort_order",

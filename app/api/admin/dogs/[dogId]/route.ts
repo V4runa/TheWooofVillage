@@ -35,8 +35,8 @@ export async function PATCH(
     if (body?.cover_image_url === null || typeof body?.cover_image_url === "string")
       update.cover_image_url = body.cover_image_url || null;
 
-    if (body?.age_weeks === null || typeof body?.age_weeks === "number")
-      update.age_weeks = body.age_weeks;
+    if (body?.date_of_birth === null || typeof body?.date_of_birth === "string")
+      update.date_of_birth = parseDateOrNull(body.date_of_birth);
 
     if (body?.deposit_amount_cents === null || typeof body?.deposit_amount_cents === "number")
       update.deposit_amount_cents = body.deposit_amount_cents;
@@ -78,7 +78,7 @@ export async function PATCH(
           "cover_image_url",
           "breed",
           "sex",
-          "age_weeks",
+          "date_of_birth",
           "color",
           "ready_date",
           "sort_order",

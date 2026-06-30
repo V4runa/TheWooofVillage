@@ -24,7 +24,7 @@ create table if not exists public.dogs (
   cover_image_url      text,
   breed                text,
   sex                  text,
-  age_weeks            integer,
+  date_of_birth        date,
   color                text,
   ready_date           date,
   sort_order           integer default 0,

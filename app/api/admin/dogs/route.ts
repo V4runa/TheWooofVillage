@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
           "cover_image_url",
           "breed",
           "sex",
-          "age_weeks",
+          "date_of_birth",
           "color",
           "ready_date",
           "sort_order",
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
      - price_amount_cents (optional)
      - breed (optional)
      - sex (optional)
-     - age_weeks (optional)
+     - date_of_birth (optional: YYYY-MM-DD)
      - color (optional)
      - ready_date (optional: YYYY-MM-DD)
      - sort_order (optional)
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     const breed = String(form.get("breed") || "").trim() || null;
     const sex = String(form.get("sex") || "").trim() || null;
-    const age_weeks = parseIntOrNull(form.get("age_weeks"));
+    const date_of_birth = parseDateOrNull(form.get("date_of_birth"));
     const color = String(form.get("color") || "").trim() || null;
     const ready_date = parseDateOrNull(form.get("ready_date"));
 
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
         cover_image_url: null,
         breed,
         sex,
-        age_weeks,
+        date_of_birth,
         color,
         ready_date,
         sort_order,
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
           "cover_image_url",
           "breed",
           "sex",
-          "age_weeks",
+          "date_of_birth",
           "color",
           "ready_date",
           "sort_order",

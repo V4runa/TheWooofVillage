@@ -78,7 +78,7 @@ export function DogsPanel() {
   const [cPrice, setCPrice] = React.useState<string>("");
   const [cBreed, setCBreed] = React.useState("");
   const [cSex, setCSex] = React.useState("");
-  const [cAgeWeeks, setCAgeWeeks] = React.useState<string>("");
+  const [cDob, setCDob] = React.useState<string>("");
   const [cColor, setCColor] = React.useState("");
   const [cReadyDate, setCReadyDate] = React.useState<string>("");
   const [cSortOrder, setCSortOrder] = React.useState<string>("0");
@@ -101,7 +101,7 @@ export function DogsPanel() {
   const [ePrice, setEPrice] = React.useState<string>("");
   const [eBreed, setEBreed] = React.useState("");
   const [eSex, setESex] = React.useState("");
-  const [eAgeWeeks, setEAgeWeeks] = React.useState<string>("");
+  const [eDob, setEDob] = React.useState<string>("");
   const [eColor, setEColor] = React.useState("");
   const [eReadyDate, setEReadyDate] = React.useState<string>("");
   const [eSortOrder, setESortOrder] = React.useState<string>("");
@@ -174,7 +174,7 @@ export function DogsPanel() {
     setEPrice(centsToDollarsInput(selected.price_amount_cents));
     setEBreed(selected.breed || "");
     setESex(selected.sex || "");
-    setEAgeWeeks(selected.age_weeks == null ? "" : String(selected.age_weeks));
+    setEDob(selected.date_of_birth || "");
     setEColor(selected.color || "");
     setEReadyDate(selected.ready_date || "");
     setESortOrder(selected.sort_order == null ? "" : String(selected.sort_order));
@@ -223,7 +223,7 @@ export function DogsPanel() {
 
       if (cBreed.trim()) form.set("breed", cBreed.trim());
       if (cSex.trim()) form.set("sex", cSex.trim());
-      if (cAgeWeeks.trim()) form.set("age_weeks", cAgeWeeks.trim());
+      if (cDob.trim()) form.set("date_of_birth", cDob.trim());
       if (cColor.trim()) form.set("color", cColor.trim());
       if (cReadyDate.trim()) form.set("ready_date", cReadyDate.trim());
       if (cSortOrder.trim()) form.set("sort_order", cSortOrder.trim());
@@ -291,9 +291,9 @@ export function DogsPanel() {
       setCDeposit("");
       setCPrice("");
       setCBreed("");
-      setCSex("");
-      setCAgeWeeks("");
-      setCColor("");
+        setCSex("");
+        setCDob("");
+        setCColor("");
       setCReadyDate("");
       setCSortOrder("0");
       setCDescription("");
@@ -331,7 +331,7 @@ export function DogsPanel() {
 
       payload.breed = eBreed.trim() || null;
       payload.sex = eSex.trim() || null;
-      payload.age_weeks = eAgeWeeks.trim() ? Number(eAgeWeeks.trim()) : null;
+      payload.date_of_birth = eDob.trim() || null;
       payload.color = eColor.trim() || null;
 
       payload.ready_date = eReadyDate.trim() || null;
@@ -397,7 +397,7 @@ export function DogsPanel() {
     setEPrice(centsToDollarsInput(selected.price_amount_cents));
     setEBreed(selected.breed || "");
     setESex(selected.sex || "");
-    setEAgeWeeks(selected.age_weeks == null ? "" : String(selected.age_weeks));
+    setEDob(selected.date_of_birth || "");
     setEColor(selected.color || "");
     setEReadyDate(selected.ready_date || "");
     setESortOrder(selected.sort_order == null ? "" : String(selected.sort_order));
@@ -909,15 +909,14 @@ export function DogsPanel() {
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="c-age" className={labelClass}>
-                        Age (weeks)
+                      <label htmlFor="c-dob" className={labelClass}>
+                        Date of birth
                       </label>
                       <input
-                        id="c-age"
-                        value={cAgeWeeks}
-                        onChange={(e) => setCAgeWeeks(e.target.value)}
-                        inputMode="numeric"
-                        placeholder="8"
+                        id="c-dob"
+                        type="date"
+                        value={cDob}
+                        onChange={(e) => setCDob(e.target.value)}
                         className={inputClass}
                       />
                     </div>
@@ -1037,9 +1036,9 @@ export function DogsPanel() {
                         setCDeposit("");
                         setCPrice("");
                         setCBreed("");
-                        setCSex("");
-                        setCAgeWeeks("");
-                        setCColor("");
+        setCSex("");
+        setCDob("");
+        setCColor("");
                         setCReadyDate("");
                         setCSortOrder("0");
                         setCDescription("");
@@ -1444,15 +1443,14 @@ export function DogsPanel() {
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="e-age" className={labelClass}>
-                        Age (weeks)
+                      <label htmlFor="e-dob" className={labelClass}>
+                        Date of birth
                       </label>
                       <input
-                        id="e-age"
-                        value={eAgeWeeks}
-                        onChange={(e) => setEAgeWeeks(e.target.value)}
-                        inputMode="numeric"
-                        placeholder="8"
+                        id="e-dob"
+                        type="date"
+                        value={eDob}
+                        onChange={(e) => setEDob(e.target.value)}
                         className={inputClass}
                       />
                     </div>

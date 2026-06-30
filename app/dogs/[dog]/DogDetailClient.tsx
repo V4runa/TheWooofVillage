@@ -28,7 +28,12 @@ function moneyFromCents(cents?: number | null) {
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
+  // Parse YYYY-MM-DD as a local date so date-only values don't drift a day in
+  // negative-offset timezones (new Date("2026-06-01") is UTC midnight).
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim());
+  const d = m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString(undefined, {
     month: "short",
@@ -613,13 +618,21 @@ export default function DogDetailClient() {
                           <div className="text-sm text-ink-secondary">
                             {[
                               dog.breed ? dog.breed : null,
-                              dog.age_weeks != null ? `${dog.age_weeks} weeks` : null,
                               dog.sex ? dog.sex : null,
                               dog.color ? dog.color : null,
                             ]
                               .filter(Boolean)
                               .join(" · ")}
                           </div>
+
+                          {dog.date_of_birth ? (
+                            <div className="mt-2 text-sm text-ink-secondary">
+                              Born:{" "}
+                              <span className="font-extrabold text-ink-primary">
+                                {formatDate(dog.date_of_birth)}
+                              </span>
+                            </div>
+                          ) : null}
 
                           {dog.ready_date ? (
                             <div className="mt-2 text-sm text-ink-secondary">

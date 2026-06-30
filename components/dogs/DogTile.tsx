@@ -19,10 +19,28 @@ function bestImageUrl(dog: Dog) {
   return dog.cover_image_url || dog.images?.[0]?.url || null;
 }
 
+// Format a YYYY-MM-DD date without timezone drift (parsing the parts directly
+// avoids the UTC-midnight off-by-one that `new Date("2026-06-01")` causes in
+// negative-offset locales).
+function formatDob(dateStr?: string | null) {
+  if (!dateStr) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim());
+  const d = m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function subtitle(dog: Dog) {
   const parts: string[] = [];
   if (dog.breed) parts.push(dog.breed);
-  if (dog.age_weeks != null) parts.push(`${dog.age_weeks} weeks`);
+  const dob = formatDob(dog.date_of_birth);
+  if (dob) parts.push(`Born ${dob}`);
   if (dog.sex) parts.push(dog.sex);
   return parts.join(" · ");
 }

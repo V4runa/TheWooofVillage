@@ -42,23 +42,27 @@ const DOG_COLUMNS = [
 
 const NO_STORE = { "Cache-Control": "no-store" } as const;
 
+const PAGE_SIZE = 200;
+const IMAGE_ID_CHUNK = 80;
+
 async function attachImages(dogs: DogRow[]) {
   const ids = dogs.map((d) => d.id);
   const byDog: Record<string, DogImage[]> = {};
 
-  if (ids.length > 0) {
+  for (let i = 0; i < ids.length; i += IMAGE_ID_CHUNK) {
+    const chunk = ids.slice(i, i + IMAGE_ID_CHUNK);
     const { data: imgs, error } = await supabaseAdmin
       .from("dog_images")
       .select("id,dog_id,url,alt,sort_order,created_at")
-      .in("dog_id", ids)
+      .in("dog_id", chunk)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
       .returns<DogImage[]>();
 
-    if (!error) {
-      for (const img of imgs ?? []) {
-        (byDog[img.dog_id] ??= []).push(img);
-      }
+    if (error) continue;
+
+    for (const img of imgs ?? []) {
+      (byDog[img.dog_id] ??= []).push(img);
     }
   }
 
@@ -101,22 +105,33 @@ export async function GET(req: NextRequest) {
       ? statusesParam.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    let q = supabaseAdmin
-      .from("dogs")
-      .select(DOG_COLUMNS)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+    const dogsAcc: DogRow[] = [];
+    let from = 0;
 
-    if (!includeAll && statuses.length > 0) {
-      q = q.in("status", statuses);
+    while (true) {
+      let q = supabaseAdmin
+        .from("dogs")
+        .select(DOG_COLUMNS)
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (!includeAll && statuses.length > 0) {
+        q = q.in("status", statuses);
+      }
+
+      const { data, error } = await q.returns<DogRow[]>();
+      if (error) {
+        return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      }
+
+      const page = data ?? [];
+      dogsAcc.push(...page);
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
 
-    const { data, error } = await q.returns<DogRow[]>();
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    }
-
-    const dogs = await attachImages(data ?? []);
+    const dogs = await attachImages(dogsAcc);
     return NextResponse.json({ ok: true, dogs }, { headers: NO_STORE });
   } catch (e: any) {
     return NextResponse.json(

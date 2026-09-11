@@ -7,13 +7,15 @@ import { DogTile } from "@/components/dogs/DogTile";
 export function DogsGrid({
   dogs,
   loading,
-  count = 12,
+  count,
 }: {
   dogs: Dog[];
   loading: boolean;
+  /** Optional preview cap. Omit to render every listing. */
   count?: number;
 }) {
-  const safeCount = Math.max(0, Math.floor(count));
+  const visible =
+    typeof count === "number" ? dogs.slice(0, Math.max(0, Math.floor(count))) : dogs;
 
   /**
    * Layout:
@@ -29,8 +31,7 @@ export function DogsGrid({
     "[grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),340px))]",
   ].join(" ");
 
-  // Don’t allow ridiculous skeleton spam if someone passes count=100
-  const skeletonCount = Math.min(safeCount || 12, 20);
+  const skeletonCount = 12;
 
   if (loading) {
     return (
@@ -57,9 +58,6 @@ export function DogsGrid({
       </div>
     );
   }
-
-  // Render up to `count`, but never force placeholders when real dogs exist.
-  const visible = dogs.slice(0, safeCount);
 
   if (visible.length === 0) {
     return (

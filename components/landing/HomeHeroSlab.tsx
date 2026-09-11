@@ -92,13 +92,14 @@ export function HomeHeroSlab({
   // Link styled as a button (semantic: no nested interactive controls)
   const linkBtnBase =
     "inline-flex items-center justify-center gap-2 rounded-2xl font-extrabold " +
-    "select-none whitespace-nowrap cursor-pointer " +
+    "select-none cursor-pointer " +
     "transition-[transform,box-shadow,background-color,border-color,opacity,filter] duration-200 ease-out " +
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55 " +
     "focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(255,252,248,0.24)] " +
     "active:translate-y-[1px]";
 
-  const linkBtnMd = "h-12 px-6 text-base";
+  const linkBtnMd =
+    "h-auto min-h-12 px-5 py-3 text-sm sm:px-6 sm:text-base whitespace-normal text-center";
 
   const linkBtnPrimary =
     "text-white " +
@@ -138,7 +139,7 @@ export function HomeHeroSlab({
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/dogs" className={[linkBtnBase, linkBtnMd, "relative", linkBtnPrimary].join(" ")}>
-                  Browse puppies →
+                  Click here to see all puppies
                 </Link>
               </div>
 

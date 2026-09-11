@@ -11,10 +11,6 @@ import { DogTile } from "@/components/dogs/DogTile";
 import { useDogs } from "@/hooks/useDogs";
 import { photoTitleStyle, photoBodyStyle, woofSheenKeyframes } from "@/lib/styles/landing";
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
 // Available pups first, then reserved, then sold/adopted.
 const STATUS_WEIGHT: Record<string, number> = {
   available: 0,
@@ -33,17 +29,12 @@ function byStatusThenOrder(a: { status: string }, b: { status: string }) {
 function ShowroomGrid({
   dogs,
   loading,
-  count,
 }: {
   dogs: Dog[];
   loading: boolean;
-  count: number;
 }) {
-  const safeCount = Math.max(0, Math.floor(count));
-  const visible = dogs.slice(0, safeCount);
-
-  // Capped, centered auto-fit so the layout looks balanced whether there is
-  // 1 puppy or 20 — cards never stretch huge, and a lone card stays tidy.
+  // Centered auto-fit so the layout looks balanced whether there is
+  // 1 puppy or many — cards never stretch huge, and a lone card stays tidy.
   const gridClass = [
     "grid",
     "gap-3 sm:gap-4 lg:gap-5",
@@ -51,7 +42,7 @@ function ShowroomGrid({
     "[grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),340px))]",
   ].join(" ");
 
-  const skeletonCount = Math.min(safeCount || 12, 20);
+  const skeletonCount = 12;
 
   if (loading) {
     return (
@@ -78,7 +69,7 @@ function ShowroomGrid({
     );
   }
 
-  if (visible.length === 0) {
+  if (dogs.length === 0) {
     return (
       <div className="rounded-3xl border border-amber-950/12 ring-1 ring-inset ring-white/20 bg-[rgba(255,250,244,0.88)] p-6 shadow-soft">
         <div className="text-xs font-black uppercase tracking-wider text-amber-900/85">
@@ -97,7 +88,7 @@ function ShowroomGrid({
 
   return (
     <div className={gridClass}>
-      {visible.map((dog) => (
+      {dogs.map((dog) => (
         <DogTile key={dog.id} dog={dog} dense />
       ))}
     </div>
@@ -112,16 +103,6 @@ export default function DogsPage() {
   const liveDogs = React.useMemo(
     () => [...(dogs ?? [])].sort(byStatusThenOrder),
     [dogs]
-  );
-  const realCount = liveDogs.length;
-  const hasRealDogs = realCount > 0;
-
-  // litters: usually <= 12, sometimes up to 20
-  const count = hasRealDogs ? clamp(realCount, 1, 20) : 0;
-
-  const showroomDogs = React.useMemo(
-    () => liveDogs.slice(0, count),
-    [liveDogs, count]
   );
 
   return (
@@ -210,7 +191,7 @@ export default function DogsPage() {
                 }}
               />
 
-              <ShowroomGrid dogs={showroomDogs} loading={loading} count={count} />
+              <ShowroomGrid dogs={liveDogs} loading={loading} />
             </div>
           </div>
         </section>

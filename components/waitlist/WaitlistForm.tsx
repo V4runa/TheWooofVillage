@@ -151,6 +151,7 @@ export function WaitlistForm() {
   const [email, setEmail] = React.useState("");
   const [breed, setBreed] = React.useState("");
   const [sex, setSex] = React.useState("");
+  const [color, setColor] = React.useState("");
   const [note, setNote] = React.useState("");
   const [accepted, setAccepted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -186,6 +187,7 @@ export function WaitlistForm() {
           buyer_email: email,
           breed_preference: breed,
           sex_preference: sex,
+          color_preference: color,
           note,
           terms_accepted: accepted,
           terms_version: config?.terms_version || WAITLIST_TERMS_VERSION,
@@ -282,18 +284,30 @@ export function WaitlistForm() {
           inputMode="email"
         />
       </label>
-      <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
-        Breed preference <span className="font-medium text-ink-secondary">(optional)</span>
-        <input className={inputClass} value={breed} onChange={(e) => setBreed(e.target.value)} />
-      </label>
-      <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
-        Sex preference <span className="font-medium text-ink-secondary">(optional)</span>
-        <select className={inputClass} value={sex} onChange={(e) => setSex(e.target.value)}>
-          <option value="">No preference</option>
-          <option value="female">Female</option>
-          <option value="male">Male</option>
-        </select>
-      </label>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
+          Breed preference <span className="font-medium text-ink-secondary">(optional)</span>
+          <input className={inputClass} value={breed} onChange={(e) => setBreed(e.target.value)} />
+        </label>
+        <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
+          Sex preference <span className="font-medium text-ink-secondary">(optional)</span>
+          <select className={inputClass} value={sex} onChange={(e) => setSex(e.target.value)}>
+            <option value="">No preference</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
+          Color preference <span className="font-medium text-ink-secondary">(optional)</span>
+          <input
+            className={inputClass}
+            value={color}
+            maxLength={40}
+            onChange={(e) => setColor(e.target.value)}
+            placeholder="Apricot, black and tan…"
+          />
+        </label>
+      </div>
       <label className="grid gap-1 text-sm font-extrabold text-ink-primary">
         Note <span className="font-medium text-ink-secondary">(optional)</span>
         <textarea className={inputClass} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />

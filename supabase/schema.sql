@@ -411,3 +411,14 @@ revoke all on function public.waitlist_assign_puppy(uuid, uuid, text) from publi
 revoke all on function public.waitlist_assign_puppy(uuid, uuid, text) from anon;
 revoke all on function public.waitlist_assign_puppy(uuid, uuid, text) from authenticated;
 grant execute on function public.waitlist_assign_puppy(uuid, uuid, text) to service_role;
+
+-- Optional color preference. Safe to run after 20261106_waitlist.sql. Does not change waitlist_enabled.
+-- ============================================================================
+-- Optional color preference on waitlist requests.
+-- Additive. Does not rewrite existing rows, does not change waitlist_enabled,
+-- and does not need the original 20261106_waitlist.sql to be run again.
+-- Existing requests keep a null color until a buyer sends one.
+-- ============================================================================
+
+alter table public.waitlist_entries
+  add column if not exists color_preference text;

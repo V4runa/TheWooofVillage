@@ -14,6 +14,7 @@ export type WaitlistEntry = {
   buyer_email: string;
   breed_preference: string | null;
   sex_preference: string | null;
+  color_preference?: string | null;
   note: string | null;
   amount_cents: number;
   currency: string;

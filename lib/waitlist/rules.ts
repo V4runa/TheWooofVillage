@@ -21,6 +21,7 @@ export type WaitlistSubmission = {
   buyerEmail: string;
   breedPreference: string | null;
   sexPreference: "Female" | "Male" | null;
+  colorPreference: string | null;
   note: string | null;
   clientRequestId: string;
   termsVersion: string;
@@ -102,6 +103,11 @@ export function validateWaitlistSubmission(body: Record<string, unknown>):
     return { ok: false, error: "Choose female, male, or leave sex blank." };
   }
 
+  const colorRaw = String(body.color_preference ?? "").trim();
+  if (colorRaw.length > 40) {
+    return { ok: false, error: "Color preference must be 40 characters or fewer." };
+  }
+
   return {
     ok: true,
     value: {
@@ -111,6 +117,7 @@ export function validateWaitlistSubmission(body: Record<string, unknown>):
       buyerEmail,
       breedPreference: cleanOptional(body.breed_preference, 80),
       sexPreference,
+      colorPreference: colorRaw || null,
       note: cleanOptional(body.note, 500),
       clientRequestId,
       termsVersion: WAITLIST_TERMS_VERSION,

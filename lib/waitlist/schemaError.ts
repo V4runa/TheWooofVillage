@@ -1,3 +1,12 @@
+/** True when the optional color preference column has not been added yet. */
+export function isMissingColorColumn(error: {
+  code?: string | null;
+  message?: string | null;
+} | null): boolean {
+  const message = (error?.message ?? "").toLowerCase();
+  return message.includes("color_preference") && isMissingWaitlistSchema(error);
+}
+
 /** True when the waitlist tables or columns have not been created yet. */
 export function isMissingWaitlistSchema(error: {
   code?: string | null;

@@ -12,7 +12,7 @@ import {
   validateWaitlistSubmission,
   WAITLIST_TERMS_VERSION,
 } from "./rules";
-import { isMissingWaitlistSchema } from "./schemaError";
+import { isMissingColorColumn, isMissingWaitlistSchema } from "./schemaError";
 
 const ENTRY_COLUMNS = [
   "id",
@@ -53,6 +53,18 @@ const ENTRY_COLUMNS = [
   "refund_approved_at",
   "refund_returned_at",
 ].join(",");
+
+function entryColumns(includeColor: boolean) {
+  return includeColor ? `${ENTRY_COLUMNS},color_preference` : ENTRY_COLUMNS;
+}
+
+async function colorPreferenceSupported(): Promise<boolean> {
+  const probe = await supabaseAdmin.from("waitlist_entries").select("color_preference").limit(1);
+  if (!probe.error) return true;
+  if (isMissingColorColumn(probe.error)) return false;
+  if (isMissingWaitlistSchema(probe.error)) return false;
+  return false;
+}
 
 export type SchemaGap = { schemaMissing: true };
 export type DbFail = { schemaMissing: false; error: string };
@@ -119,18 +131,18 @@ function publicPayload(
   };
 }
 
-async function findByRequestId(id: string) {
+async function findByRequestId(id: string, includeColor: boolean) {
   return supabaseAdmin
     .from("waitlist_entries")
-    .select(ENTRY_COLUMNS)
+    .select(entryColumns(includeColor))
     .eq("client_request_id", id)
     .maybeSingle();
 }
 
-async function findOpenByPhone(digits: string) {
+async function findOpenByPhone(digits: string, includeColor: boolean) {
   return supabaseAdmin
     .from("waitlist_entries")
-    .select(ENTRY_COLUMNS)
+    .select(entryColumns(includeColor))
     .eq("buyer_phone_digits", digits)
     .eq("handling_status", "open")
     .maybeSingle();
@@ -167,7 +179,18 @@ export async function createWaitlistEntry(body: Record<string, unknown>): Promis
     return { ok: false, status: 403, error: "The waitlist is not open right now." };
   }
 
-  const existingRequest = await findByRequestId(parsed.value.clientRequestId);
+  const includeColor = await colorPreferenceSupported();
+  if (parsed.value.colorPreference && !includeColor) {
+    return {
+      ok: false,
+      status: 503,
+      schemaMissing: true,
+      error:
+        "Color preference cannot be saved yet. Leave color blank, or apply supabase/migrations/20261106_waitlist_color.sql.",
+    };
+  }
+
+  const existingRequest = await findByRequestId(parsed.value.clientRequestId, includeColor);
   if (existingRequest.error) {
     const problem = gapOrFail(existingRequest.error);
     return {
@@ -186,7 +209,7 @@ export async function createWaitlistEntry(body: Record<string, unknown>): Promis
     };
   }
 
-  const existingPhone = await findOpenByPhone(parsed.value.buyerPhoneDigits);
+  const existingPhone = await findOpenByPhone(parsed.value.buyerPhoneDigits, includeColor);
   if (existingPhone.error) {
     return { ok: false, status: 500, error: "The waitlist is not available yet." };
   }
@@ -217,6 +240,7 @@ export async function createWaitlistEntry(body: Record<string, unknown>): Promis
       buyer_email: parsed.value.buyerEmail,
       breed_preference: parsed.value.breedPreference,
       sex_preference: parsed.value.sexPreference,
+      ...(includeColor ? { color_preference: parsed.value.colorPreference } : {}),
       note: parsed.value.note,
       amount_cents: amount,
       currency: "USD",
@@ -225,13 +249,13 @@ export async function createWaitlistEntry(body: Record<string, unknown>): Promis
       client_request_id: parsed.value.clientRequestId,
       sort_position: sortPosition,
     })
-    .select(ENTRY_COLUMNS)
+    .select(entryColumns(includeColor))
     .single();
 
   if (error) {
     const kind = duplicateKind(error);
     if (kind === "request") {
-      const again = await findByRequestId(parsed.value.clientRequestId);
+      const again = await findByRequestId(parsed.value.clientRequestId, includeColor);
       if (again.data) {
         const entry = again.data as unknown as WaitlistEntry;
         return {
@@ -242,7 +266,7 @@ export async function createWaitlistEntry(body: Record<string, unknown>): Promis
       }
     }
     if (kind === "phone") {
-      const again = await findOpenByPhone(parsed.value.buyerPhoneDigits);
+      const again = await findOpenByPhone(parsed.value.buyerPhoneDigits, includeColor);
       if (again.data) {
         const entry = again.data as unknown as WaitlistEntry;
         return {
@@ -316,11 +340,24 @@ function searchToken(raw: string) {
   return raw.replace(/[%_,()*]/g, "").trim().slice(0, 80);
 }
 
+export async function countOpenWaitlistEntries(): Promise<
+  { ok: true; count: number } | SchemaGap | DbFail
+> {
+  const { count, error } = await supabaseAdmin
+    .from("waitlist_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("handling_status", "open");
+  if (error) return gapOrFail(error);
+  if (count == null) return { schemaMissing: false, error: "Could not count open waitlist requests." };
+  return { ok: true, count };
+}
+
 export async function listWaitlistEntries(rawQuery: string): Promise<
   { ok: true; entries: WaitlistEntry[] } | SchemaGap | DbFail
 > {
+  const includeColor = await colorPreferenceSupported();
   const token = searchToken(rawQuery);
-  let query = supabaseAdmin.from("waitlist_entries").select(ENTRY_COLUMNS).limit(200);
+  let query = supabaseAdmin.from("waitlist_entries").select(entryColumns(includeColor)).limit(200);
 
   if (token) {
     const digits = token.replace(/\D/g, "");
@@ -354,9 +391,10 @@ export async function getWaitlistDetail(id: string): Promise<
   | SchemaGap
   | DbFail
 > {
+  const includeColor = await colorPreferenceSupported();
   const entryResult = await supabaseAdmin
     .from("waitlist_entries")
-    .select(ENTRY_COLUMNS)
+    .select(entryColumns(includeColor))
     .eq("id", id)
     .maybeSingle();
   if (entryResult.error) return gapOrFail(entryResult.error);
@@ -407,7 +445,8 @@ async function addEvent(entryId: string, kind: string, note: string, amount: num
 }
 
 async function loadEntry(id: string) {
-  return supabaseAdmin.from("waitlist_entries").select(ENTRY_COLUMNS).eq("id", id).maybeSingle();
+  const includeColor = await colorPreferenceSupported();
+  return supabaseAdmin.from("waitlist_entries").select(entryColumns(includeColor)).eq("id", id).maybeSingle();
 }
 
 export async function actOnWaitlistEntry(

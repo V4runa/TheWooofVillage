@@ -58,6 +58,7 @@ describe("waitlist submission", () => {
     if (!result.ok) return;
     assert.equal(result.value.breedPreference, null);
     assert.equal(result.value.sexPreference, null);
+    assert.equal(result.value.colorPreference, null);
     assert.equal(result.value.note, null);
   });
 });
@@ -261,6 +262,29 @@ describe("delete request", () => {
     assert.equal(canDeleteWaitlistEntry({ ...open, assignedDogId: "dog-1" }).ok, false);
     assert.equal(canDeleteWaitlistEntry({ ...open, refundStatus: "approved" }).ok, false);
     assert.equal(canDeleteWaitlistEntry({ ...open, refundStatus: "returned" }).ok, false);
+  });
+});
+
+describe("color preference", () => {
+  it("keeps an optional color separate from the note", () => {
+    const result = validateWaitlistSubmission({
+      ...validBody,
+      color_preference: "Apricot",
+      note: "Please text after 5",
+    });
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.value.colorPreference, "Apricot");
+    assert.equal(result.value.note, "Please text after 5");
+    assert.equal(result.value.colorPreference === result.value.note, false);
+  });
+
+  it("rejects a color longer than 40 characters", () => {
+    const result = validateWaitlistSubmission({
+      ...validBody,
+      color_preference: "x".repeat(41),
+    });
+    assert.equal(result.ok, false);
   });
 });
 

@@ -477,26 +477,41 @@ function BuyerDetail({
         </p>
       </header>
 
-      <dl className="grid gap-2 rounded-2xl bg-stone-50 p-4 text-sm text-gray-800 ring-1 ring-stone-200 sm:grid-cols-2">
-        <div>
+      <dl className="grid gap-3 rounded-2xl bg-stone-50 p-4 text-sm text-gray-800 ring-1 ring-stone-200 sm:grid-cols-6">
+        <div className="sm:col-span-3">
           <dt className="font-semibold text-gray-500">Saved deposit</dt>
           <dd className="text-lg font-extrabold text-gray-900">{formatUsd(entry.amount_cents)}</dd>
         </div>
-        <div>
+        <div className="sm:col-span-3">
           <dt className="font-semibold text-gray-500">Confirmed received</dt>
           <dd className="text-lg font-extrabold text-gray-900">
             {entry.confirmed_amount_cents == null ? "Not yet" : formatUsd(entry.confirmed_amount_cents)}
           </dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="font-semibold text-gray-500">Preferences</dt>
+          <dt className="font-semibold text-gray-500">Breed</dt>
+          <dd>{entry.breed_preference || "No preference"}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="font-semibold text-gray-500">Sex</dt>
+          <dd>{entry.sex_preference || "No preference"}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="font-semibold text-gray-500">Color</dt>
           <dd>
-            {entry.breed_preference || "No breed preference"} · {entry.sex_preference || "No sex preference"}
-            {entry.note ? ` · ${entry.note}` : ""}
+            {entry.color_preference === undefined
+              ? "Not stored until the color update is applied"
+              : entry.color_preference || "No preference"}
           </dd>
         </div>
+        {entry.note ? (
+          <div className="sm:col-span-6">
+            <dt className="font-semibold text-gray-500">Note</dt>
+            <dd>{entry.note}</dd>
+          </div>
+        ) : null}
         {detail.assigned_dog ? (
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-6">
             <dt className="font-semibold text-gray-500">Assigned puppy</dt>
             <dd>
               {detail.assigned_dog.name}

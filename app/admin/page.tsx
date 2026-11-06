@@ -110,10 +110,13 @@ type Counts = {
   availableDogs: number;
 };
 
+type WaitlistCount = { status: "loading" } | { status: "ready"; count: number } | { status: "error" };
+
 export default function AdminPage() {
   const { showToast } = useToast();
   const [counts, setCounts] = React.useState<Counts | null>(null);
   const [countsLoading, setCountsLoading] = React.useState(true);
+  const [waitlistCount, setWaitlistCount] = React.useState<WaitlistCount>({ status: "loading" });
 
   React.useEffect(() => {
     let alive = true;
@@ -138,14 +141,26 @@ export default function AdminPage() {
           pendingTestimonials: tes.testimonials?.length ?? 0,
           availableDogs: dgs.dogs?.length ?? 0,
         });
-      } catch (e: any) {
-        if (alive) showToast(e?.message || "Could not load dashboard counts.", "error");
+      } catch (error: unknown) {
+        if (alive) showToast(error instanceof Error ? error.message : "Could not load dashboard counts.", "error");
       } finally {
         if (alive) setCountsLoading(false);
       }
     }
 
     void loadCounts();
+    adminJson<{ ok: true; count: number }>("/api/admin/waitlist?count=open")
+      .then((data) => {
+        if (!alive) return;
+        if (typeof data.count !== "number") {
+          setWaitlistCount({ status: "error" });
+          return;
+        }
+        setWaitlistCount({ status: "ready", count: data.count });
+      })
+      .catch(() => {
+        if (alive) setWaitlistCount({ status: "error" });
+      });
     return () => {
       alive = false;
     };
@@ -159,6 +174,7 @@ export default function AdminPage() {
       href: "/admin/reservations",
       icon: CalendarCheck,
       urgent: (counts?.newReservations ?? 0) > 0,
+      unavailable: false,
     },
     {
       label: "Pending testimonials",
@@ -167,6 +183,7 @@ export default function AdminPage() {
       href: "/admin/testimonials",
       icon: MessageSquare,
       urgent: (counts?.pendingTestimonials ?? 0) > 0,
+      unavailable: false,
     },
     {
       label: "Available dogs",
@@ -175,6 +192,16 @@ export default function AdminPage() {
       href: "/admin/dogs",
       icon: Dog,
       urgent: false,
+      unavailable: false,
+    },
+    {
+      label: "Waitlist requests",
+      hint: "Open requests in the choosing queue",
+      value: waitlistCount.status === "ready" ? waitlistCount.count : null,
+      href: "/admin/waitlist",
+      icon: ListOrdered,
+      urgent: waitlistCount.status === "ready" && waitlistCount.count > 0,
+      unavailable: waitlistCount.status === "error",
     },
   ];
 
@@ -185,7 +212,7 @@ export default function AdminPage() {
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-500">
           At a glance
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((s) => {
             const Icon = s.icon;
             return (
@@ -205,15 +232,19 @@ export default function AdminPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-4xl font-extrabold tabular-nums leading-none text-gray-900">
-                    {countsLoading ? (
+                    {countsLoading || (s.label === "Waitlist requests" && waitlistCount.status === "loading") ? (
                       <span className="inline-block h-8 w-10 animate-pulse rounded-md bg-stone-200 align-middle" />
+                    ) : s.unavailable ? (
+                      <span aria-label="Count unavailable">—</span>
                     ) : (
                       s.value
                     )}
                   </div>
                   <div className="mt-1.5 text-base font-bold text-gray-900">{s.label}</div>
                   <div className="text-sm text-gray-500">
-                    {s.urgent ? (
+                    {s.unavailable ? (
+                      <span className="font-semibold text-red-700">Count unavailable</span>
+                    ) : s.urgent ? (
                       <span className="font-semibold text-sun-700">Needs attention</span>
                     ) : (
                       s.hint
@@ -231,15 +262,17 @@ export default function AdminPage() {
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-500">
           Manage
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {CARDS.map((c) => {
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          {CARDS.map((c, index) => {
             const Icon = c.icon;
             return (
               <Link
                 key={c.href}
                 href={c.href}
                 className={`${softShell(
-                  "group flex flex-col overflow-hidden border border-stone-200 transition-all hover:-translate-y-0.5 hover:shadow-adminHover"
+                  `group flex flex-col overflow-hidden border border-stone-200 transition-all hover:-translate-y-0.5 hover:shadow-adminHover xl:col-span-2 ${
+                    index >= 3 ? "sm:col-span-2 xl:col-span-3" : ""
+                  }`
                 )}`}
               >
                 <div

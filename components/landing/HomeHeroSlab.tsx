@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { DogTile } from "@/components/dogs/DogTile";
 import { ActionChip, IconDot } from "@/components/landing/ActionChip";
+import { WaitlistInvite } from "@/components/waitlist/WaitlistInvite";
 
 async function copyToClipboard(text: string) {
   try {
@@ -137,10 +138,11 @@ export function HomeHeroSlab({
                 Browse available pups. Tap a listing for photos, details, and how to reserve.
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                 <Link href="/dogs" className={[linkBtnBase, linkBtnMd, "relative", linkBtnPrimary].join(" ")}>
                   Click here to see all puppies
                 </Link>
+                <WaitlistInvite prominence="button" />
               </div>
 
               {/* Small trust line (adds “airy clarity” + vibe) */}

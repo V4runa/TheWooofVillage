@@ -10,12 +10,25 @@ type Config = {
   amount_cents?: number;
 };
 
+const buttonClass = [
+  "inline-flex items-center justify-center rounded-2xl font-extrabold",
+  "min-h-12 px-5 py-3 text-sm sm:px-6 sm:text-base text-center",
+  "text-amber-950 bg-[rgba(255,246,235,0.96)] border border-amber-950/22",
+  "ring-1 ring-inset ring-white/40",
+  "shadow-[0_14px_34px_-22px_rgba(17,24,39,0.38)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/80",
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(255,252,248,0.96)]",
+  "hover:-translate-y-[1px] hover:bg-[rgba(255,248,242,1)] hover:border-amber-950/30",
+  "active:translate-y-[1px]",
+].join(" ");
+
 /**
- * Secondary invitation beside the puppy listings.
- * Hidden when the waitlist schema is missing or an admin has switched it off,
- * so the catalog itself never fails because of the waitlist.
+ * Public invitation to /waitlist.
+ * Hidden when the waitlist is missing or an admin has switched it off.
+ * `prominence="text"` stays beside the listings. `prominence="button"` is the
+ * larger control in the homepage hero.
  */
-export function WaitlistInvite() {
+export function WaitlistInvite({ prominence = "text" }: { prominence?: "text" | "button" }) {
   const [config, setConfig] = React.useState<Config | null>(null);
 
   React.useEffect(() => {
@@ -34,6 +47,14 @@ export function WaitlistInvite() {
   }, []);
 
   if (!config?.ready || !config.enabled || config.amount_cents == null) return null;
+
+  if (prominence === "button") {
+    return (
+      <Link href="/waitlist" className={buttonClass}>
+        Join the waitlist
+      </Link>
+    );
+  }
 
   return (
     <p className="mt-3 text-sm text-ink-secondary">

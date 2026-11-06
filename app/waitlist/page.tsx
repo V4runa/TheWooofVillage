@@ -22,7 +22,9 @@ export default function WaitlistPage() {
           </h1>
           <p className="mt-3 max-w-[60ch] text-sm leading-relaxed sm:text-base" style={photoBodyStyle}>
             This is for a puppy that is not listed yet. You choose among later arrivals.
-            We save your request first, then show where to send the deposit.
+            Save your request, then pay the deposit with the same Cash App, Venmo, PayPal,
+            or Zelle options used on a puppy page. Opening a payment app does not confirm
+            the money — we check the receipt ourselves.
           </p>
           <div className="mt-6 rounded-3xl border border-amber-950/12 bg-[rgba(255,252,248,0.96)] p-6 sm:p-7">
             <WaitlistForm />

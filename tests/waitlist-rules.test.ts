@@ -4,6 +4,7 @@ import {
   assignmentDecision,
   businessRefundRecord,
   buyerCancelAllowed,
+  buyerQueueLabel,
   dollarsToCents,
   paymentConfirmation,
   phoneDigits,
@@ -191,6 +192,50 @@ describe("cancellations", () => {
     if (!recorded.ok) return;
     assert.equal(recorded.amountCents, 50000);
     assert.equal(recorded.refundStatus, "returned");
+  });
+});
+
+describe("admin queue labels", () => {
+  it("separates a saved deposit from a confirmed payment", () => {
+    assert.deepEqual(
+      buyerQueueLabel({
+        paymentStatus: "unverified",
+        confirmedCents: null,
+        savedCents: 50000,
+        creditStatus: "unused",
+        handlingStatus: "open",
+        closeReason: null,
+        refundStatus: "none",
+      }),
+      { payment: "Saved $500.00", next: "Confirm receipt" }
+    );
+    assert.deepEqual(
+      buyerQueueLabel({
+        paymentStatus: "confirmed",
+        confirmedCents: 50000,
+        savedCents: 50000,
+        creditStatus: "unused",
+        handlingStatus: "open",
+        closeReason: null,
+        refundStatus: "none",
+      }).next,
+      "Assign a puppy"
+    );
+  });
+
+  it("does not describe a buyer cancellation as a refund", () => {
+    assert.equal(
+      buyerQueueLabel({
+        paymentStatus: "confirmed",
+        confirmedCents: 50000,
+        savedCents: 50000,
+        creditStatus: "unused",
+        handlingStatus: "closed",
+        closeReason: "buyer_cancel",
+        refundStatus: "none",
+      }).next,
+      "Buyer cancelled"
+    );
   });
 });
 

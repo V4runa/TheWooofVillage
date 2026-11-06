@@ -257,3 +257,45 @@ export function preservedSnapshot(entryCents: number, nextDefaultCents: number):
   void nextDefaultCents;
   return entryCents;
 }
+
+export type QueueScan = {
+  payment: string;
+  next: string;
+};
+
+/** Plain labels for the admin queue. Does not change any saved status. */
+export function buyerQueueLabel(entry: {
+  paymentStatus: string;
+  confirmedCents: number | null;
+  savedCents: number;
+  creditStatus: string;
+  handlingStatus: string;
+  closeReason: string | null;
+  refundStatus: string;
+}): QueueScan {
+  if (entry.creditStatus === "applied") {
+    return { payment: "Credited", next: "Assigned" };
+  }
+  if (entry.closeReason === "buyer_cancel") {
+    return {
+      payment: entry.paymentStatus === "confirmed" ? "Confirmed, not refunded" : "Not confirmed",
+      next: "Buyer cancelled",
+    };
+  }
+  if (entry.handlingStatus === "closed" && entry.closeReason === "business") {
+    const payment =
+      entry.refundStatus === "returned"
+        ? "Refund recorded"
+        : entry.refundStatus === "approved"
+          ? "Refund approved, not returned"
+          : "No refund recorded";
+    return { payment, next: "Closed by the shop" };
+  }
+  if (entry.paymentStatus !== "confirmed") {
+    return { payment: `Saved ${formatUsd(entry.savedCents)}`, next: "Confirm receipt" };
+  }
+  return {
+    payment: `Confirmed ${formatUsd(entry.confirmedCents ?? entry.savedCents)}`,
+    next: "Assign a puppy",
+  };
+}

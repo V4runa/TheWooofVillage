@@ -258,6 +258,39 @@ export function preservedSnapshot(entryCents: number, nextDefaultCents: number):
   return entryCents;
 }
 
+export function isWaitlistId(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+/**
+ * Hard-delete is only for a request with no confirmed money, credit, or refund.
+ * Those records stay so the history is not erased and no puppy is changed.
+ */
+export function canDeleteWaitlistEntry(entry: {
+  paymentStatus: string;
+  confirmedCents: number | null;
+  creditStatus: string;
+  assignedDogId: string | null;
+  refundStatus: string;
+  creditAppliedCents: number | null;
+}): { ok: true } | { ok: false; error: string } {
+  const hasMoney =
+    entry.paymentStatus === "confirmed" ||
+    entry.confirmedCents != null ||
+    entry.creditStatus === "applied" ||
+    entry.assignedDogId != null ||
+    entry.creditAppliedCents != null ||
+    entry.refundStatus !== "none";
+  if (hasMoney) {
+    return {
+      ok: false,
+      error:
+        "This request has a confirmed payment, a credit, or a refund record, so it stays. Deleting it would erase that history and would not change the puppy.",
+    };
+  }
+  return { ok: true };
+}
+
 export type QueueScan = {
   payment: string;
   next: string;

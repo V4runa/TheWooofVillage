@@ -5,6 +5,7 @@ import {
   businessRefundRecord,
   buyerCancelAllowed,
   buyerQueueLabel,
+  canDeleteWaitlistEntry,
   dollarsToCents,
   paymentConfirmation,
   phoneDigits,
@@ -236,6 +237,30 @@ describe("admin queue labels", () => {
       }).next,
       "Buyer cancelled"
     );
+  });
+});
+
+describe("delete request", () => {
+  const open = {
+    paymentStatus: "unverified",
+    confirmedCents: null,
+    creditStatus: "unused",
+    assignedDogId: null,
+    refundStatus: "none",
+    creditAppliedCents: null,
+  };
+
+  it("allows removal of a request with no confirmed money", () => {
+    assert.equal(canDeleteWaitlistEntry(open).ok, true);
+    assert.equal(canDeleteWaitlistEntry({ ...open, paymentStatus: "unverified", refundStatus: "none" }).ok, true);
+  });
+
+  it("keeps confirmed payments, credits, assignments, and refunds", () => {
+    assert.equal(canDeleteWaitlistEntry({ ...open, paymentStatus: "confirmed", confirmedCents: 50000 }).ok, false);
+    assert.equal(canDeleteWaitlistEntry({ ...open, creditStatus: "applied", creditAppliedCents: 50000 }).ok, false);
+    assert.equal(canDeleteWaitlistEntry({ ...open, assignedDogId: "dog-1" }).ok, false);
+    assert.equal(canDeleteWaitlistEntry({ ...open, refundStatus: "approved" }).ok, false);
+    assert.equal(canDeleteWaitlistEntry({ ...open, refundStatus: "returned" }).ok, false);
   });
 });
 

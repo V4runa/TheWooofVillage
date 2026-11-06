@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin/auth";
-import { actOnWaitlistEntry, getWaitlistDetail } from "@/lib/waitlist/db";
+import { actOnWaitlistEntry, deleteWaitlistEntry, getWaitlistDetail } from "@/lib/waitlist/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,4 +49,26 @@ export async function POST(
     return NextResponse.json({ ok: true });
   }
   return NextResponse.json(detail);
+}
+
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const authError = await requireAdmin(req);
+  if (authError) return authError;
+
+  const { id } = await ctx.params;
+  const result = await deleteWaitlistEntry(id);
+  if ("ok" in result) return NextResponse.json({ ok: true, deleted: true });
+  if ("notFound" in result) {
+    return NextResponse.json({ error: "That request is already gone." }, { status: 404 });
+  }
+  if ("blocked" in result) {
+    return NextResponse.json({ error: result.blocked }, { status: 409 });
+  }
+  return NextResponse.json(
+    { error: result.schemaMissing ? SCHEMA_ERROR : result.error },
+    { status: result.schemaMissing ? 503 : 400 }
+  );
 }

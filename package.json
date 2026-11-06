@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/waitlist-rules.test.ts tests/waitlist-payments.test.ts"
+    "test": "node --experimental-strip-types --test tests/waitlist-rules.test.ts tests/waitlist-payments.test.ts tests/waitlist-delete-auth.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

@@ -5,7 +5,7 @@ import { AdminApiError, adminJson } from "@/lib/admin/apiClient";
 import { btn } from "@/components/admin/AdminUi";
 import { useToast } from "@/components/admin/Toast";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
-import { buyerQueueLabel, dollarsToCents, formatUsd } from "@/lib/waitlist/rules";
+import { buyerQueueLabel, canDeleteWaitlistEntry, dollarsToCents, formatUsd } from "@/lib/waitlist/rules";
 import type { WaitlistEntry, WaitlistEvent, WaitlistSettings } from "@/types/waitlist";
 
 type DogOption = {
@@ -62,6 +62,7 @@ export function WaitlistPanel({ preview }: { preview?: Preview } = {}) {
   const [entries, setEntries] = React.useState<WaitlistEntry[]>([]);
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [opening, setOpening] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
 
   const loadList = React.useCallback(async (q: string) => {
     const data = await adminJson<{ ok: true; entries: WaitlistEntry[] }>(
@@ -180,6 +181,56 @@ export function WaitlistPanel({ preview }: { preview?: Preview } = {}) {
       showToast(error instanceof Error ? error.message : "Could not open that buyer.", "error");
     } finally {
       setOpening(false);
+    }
+  }
+
+  async function removeSelected() {
+    if (!detail || deleting) return;
+    const id = detail.entry.id;
+    const name = detail.entry.buyer_name;
+    const allowed = canDeleteWaitlistEntry({
+      paymentStatus: detail.entry.payment_status,
+      confirmedCents: detail.entry.confirmed_amount_cents,
+      creditStatus: detail.entry.credit_status,
+      assignedDogId: detail.entry.assigned_dog_id,
+      refundStatus: detail.entry.refund_status,
+      creditAppliedCents: detail.entry.credit_applied_cents,
+    });
+    if (!allowed.ok) {
+      showToast(allowed.error, "error");
+      return;
+    }
+    const ok = await confirm({
+      title: `Delete ${name}'s waitlist request?`,
+      message:
+        "This permanently removes the request and its notes. It does not refund money and does not change any puppy. This is not a pass or a cancellation.",
+      confirmLabel: "Delete request",
+      cancelLabel: "Cancel",
+      danger: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      if (preview) {
+        setEntries((current) => current.filter((row) => row.id !== id));
+        setDetail((current) => (current?.entry.id === id ? null : current));
+        showToast(`${name}'s request was deleted in this local fixture only. No puppy was changed.`);
+        return;
+      }
+      await adminJson(`/api/admin/waitlist/${id}`, { method: "DELETE" });
+      setEntries((current) => current.filter((row) => row.id !== id));
+      setDetail((current) => (current?.entry.id === id ? null : current));
+      showToast(`${name}'s request was deleted. No puppy was changed.`);
+    } catch (error: unknown) {
+      if (error instanceof AdminApiError && error.status === 404) {
+        setEntries((current) => current.filter((row) => row.id !== id));
+        setDetail((current) => (current?.entry.id === id ? null : current));
+        showToast("That request is already gone.");
+        return;
+      }
+      showToast(error instanceof Error ? error.message : "Could not delete that request.", "error");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -312,6 +363,8 @@ export function WaitlistPanel({ preview }: { preview?: Preview } = {}) {
               orderLocked={activeQuery.length > 0}
               onBack={() => setDetail(null)}
               onRun={run}
+              onDelete={removeSelected}
+              deleting={deleting}
               confirm={confirm}
             />
           ) : (
@@ -371,12 +424,16 @@ function BuyerDetail({
   orderLocked,
   onBack,
   onRun,
+  onDelete,
+  deleting,
   confirm,
 }: {
   detail: Detail;
   orderLocked: boolean;
   onBack: () => void;
   onRun: (action: Record<string, unknown>, success: string) => Promise<void>;
+  onDelete: () => Promise<void>;
+  deleting: boolean;
   confirm: (opts?: { title?: string; message?: string; confirmLabel?: string; danger?: boolean }) => Promise<boolean>;
 }) {
   const entry = detail.entry;
@@ -657,6 +714,46 @@ function BuyerDetail({
           </form>
         </div>
       </details>
+
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-red-200">
+        <h3 className="text-base font-extrabold text-gray-900">Delete request</h3>
+        {canDeleteWaitlistEntry({
+          paymentStatus: entry.payment_status,
+          confirmedCents: entry.confirmed_amount_cents,
+          creditStatus: entry.credit_status,
+          assignedDogId: entry.assigned_dog_id,
+          refundStatus: entry.refund_status,
+          creditAppliedCents: entry.credit_applied_cents,
+        }).ok ? (
+          <p className="mt-1 text-sm text-gray-700">
+            Removes this request and its notes. It does not refund money or change a puppy.
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-gray-700">
+            This request has a confirmed payment, a credit, or a refund record, so it stays.
+            Deleting it would erase that history and would not change the puppy.
+          </p>
+        )}
+        <button
+          className={`${btn("danger")} mt-3`}
+          type="button"
+          disabled={
+            deleting ||
+            !canDeleteWaitlistEntry({
+              paymentStatus: entry.payment_status,
+              confirmedCents: entry.confirmed_amount_cents,
+              creditStatus: entry.credit_status,
+              assignedDogId: entry.assigned_dog_id,
+              refundStatus: entry.refund_status,
+              creditAppliedCents: entry.credit_applied_cents,
+            }).ok
+          }
+          aria-busy={deleting}
+          onClick={() => void onDelete()}
+        >
+          {deleting ? "Deleting…" : "Delete request"}
+        </button>
+      </div>
     </div>
   );
 }

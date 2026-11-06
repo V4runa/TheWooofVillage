@@ -5,6 +5,8 @@ import {
   assignmentDecision,
   businessRefundRecord,
   buyerCancelAllowed,
+  canDeleteWaitlistEntry,
+  isWaitlistId,
   paymentConfirmation,
   snapshotAmount,
   validateWaitlistSubmission,
@@ -599,4 +601,34 @@ export async function actOnWaitlistEntry(
   }
 
   return { schemaMissing: false, error: "Unknown action." };
+}
+
+export async function deleteWaitlistEntry(id: string): Promise<
+  | { ok: true }
+  | { notFound: true }
+  | { blocked: string }
+  | SchemaGap
+  | DbFail
+> {
+  if (!isWaitlistId(id)) return { schemaMissing: false, error: "That request id is not valid." };
+
+  const current = await loadEntry(id);
+  if (current.error) return gapOrFail(current.error);
+  if (!current.data) return { notFound: true };
+
+  const entry = current.data as unknown as WaitlistEntry;
+  const allowed = canDeleteWaitlistEntry({
+    paymentStatus: entry.payment_status,
+    confirmedCents: entry.confirmed_amount_cents,
+    creditStatus: entry.credit_status,
+    assignedDogId: entry.assigned_dog_id,
+    refundStatus: entry.refund_status,
+    creditAppliedCents: entry.credit_applied_cents,
+  });
+  if (!allowed.ok) return { blocked: allowed.error };
+
+  const removed = await supabaseAdmin.from("waitlist_entries").delete().eq("id", id).select("id");
+  if (removed.error) return gapOrFail(removed.error);
+  if (!removed.data || removed.data.length === 0) return { notFound: true };
+  return { ok: true };
 }

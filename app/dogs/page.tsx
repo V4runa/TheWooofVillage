@@ -10,6 +10,7 @@ import { DogTile } from "@/components/dogs/DogTile";
 
 import { useDogs } from "@/hooks/useDogs";
 import { photoTitleStyle, photoBodyStyle, woofSheenKeyframes } from "@/lib/styles/landing";
+import { WaitlistInvite } from "@/components/waitlist/WaitlistInvite";
 
 // Available pups first, then reserved, then sold/adopted.
 const STATUS_WEIGHT: Record<string, number> = {
@@ -142,6 +143,7 @@ export default function DogsPage() {
                     Available pups show first. Reserved and adopted babies stay
                     up so you can see recent litters and our happy homes.
                   </p>
+                  <WaitlistInvite />
 
                 </div>
 

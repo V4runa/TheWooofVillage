@@ -8,6 +8,7 @@ import {
   Dog,
   CalendarCheck,
   MessageSquare,
+  ListOrdered,
   User,
   ExternalLink,
   Home,
@@ -30,6 +31,7 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Dogs", href: "/admin/dogs", icon: Dog },
   { label: "Reservations", href: "/admin/reservations", icon: CalendarCheck },
+  { label: "Waitlist", href: "/admin/waitlist", icon: ListOrdered },
   { label: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
   { label: "Profile", href: "/admin/profile", icon: User },
 ];
@@ -48,6 +50,10 @@ const PAGE_META: Record<string, { title: string; subtitle?: string }> = {
   "/admin/reservations": {
     title: "Reservations",
     subtitle: "Review and update reservation requests.",
+  },
+  "/admin/waitlist": {
+    title: "Waitlist",
+    subtitle: "Search buyers, verify deposits, set choosing order, and assign one puppy.",
   },
   "/admin/testimonials": {
     title: "Testimonials",
@@ -126,7 +132,7 @@ export function AdminShell({
                 </span>
               </Link>
               <nav
-                className="hidden sm:flex items-center gap-1"
+                className="hidden min-w-0 sm:flex items-center gap-1 overflow-x-auto"
                 aria-label="Admin sections"
               >
                 {NAV.map((item) => {

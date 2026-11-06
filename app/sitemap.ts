@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${siteUrl}/dogs`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/waitlist`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
   ];
 
   // Best-effort dynamic routes. Never let a DB hiccup break the sitemap.

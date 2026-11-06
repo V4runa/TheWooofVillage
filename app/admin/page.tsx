@@ -6,6 +6,7 @@ import {
   Dog,
   CalendarCheck,
   MessageSquare,
+  ListOrdered,
   User,
   ArrowRight,
   ExternalLink,
@@ -43,6 +44,14 @@ const CARDS: Card[] = [
     bullets: ["Filter by new, contacted, or closed", "Update status quickly", "Open dog links in a new tab"],
     icon: CalendarCheck,
     accent: "sky",
+  },
+  {
+    title: "Waitlist",
+    href: "/admin/waitlist",
+    description: "Future-puppy deposits, separate from a listed puppy.",
+    bullets: ["Search and verify payments", "Arrange choosing order", "Assign one puppy and credit the deposit once"],
+    icon: ListOrdered,
+    accent: "meadow",
   },
   {
     title: "Testimonials",

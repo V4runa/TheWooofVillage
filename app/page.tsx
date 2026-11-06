@@ -11,6 +11,7 @@ import { TestimonialsSection } from "@/components/testimonials/TestimonialsSecti
 import { useDogs } from "@/hooks/useDogs";
 import { useMerchantProfile } from "@/hooks/useMerchantProfile";
 import { photoTitleStyle, photoBodyStyle, woofSheenKeyframes } from "@/lib/styles/landing";
+import { WaitlistInvite } from "@/components/waitlist/WaitlistInvite";
 
 function clampHomeGridCount(realCount: number) {
   return Math.min(realCount, 12);
@@ -91,6 +92,7 @@ export default function Home() {
               you can see recent litters and our happy homes. Tap any puppy for
               photos and details.
             </p>
+            <WaitlistInvite />
           </div>
 
           {error ? (
